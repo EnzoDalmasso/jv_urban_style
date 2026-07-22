@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  clearAppointments,
   getSummary,
   patchAppointmentDeposit,
   patchAppointmentStatus,
@@ -31,5 +32,6 @@ adminRouter.delete('/staff/:id', asyncHandler(removeStaff));
 adminRouter.put('/business-hours', asyncHandler(putBusinessHours));
 adminRouter.post('/special-hours', asyncHandler(postSpecialHours));
 adminRouter.delete('/special-hours/:id', asyncHandler(removeSpecialHours));
+adminRouter.delete('/appointments', asyncHandler(clearAppointments));
 adminRouter.patch('/appointments/:id/deposit', asyncHandler(patchAppointmentDeposit));
 adminRouter.patch('/appointments/:id/status', asyncHandler(patchAppointmentStatus));

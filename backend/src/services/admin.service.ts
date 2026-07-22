@@ -105,6 +105,47 @@ export async function getAdminSummary(date: string) {
   return { settings, services, staff, businessHours, specialHours, appointments };
 }
 
+export async function clearAppointmentsForAdmin(date: string) {
+  const safeDate = dateSchema.parse(date);
+
+  if (!supabase) {
+    const deleted = demoAppointments.length;
+    demoAppointments.splice(0, demoAppointments.length);
+    return { deleted };
+  }
+
+  const localDay = DateTime.fromISO(safeDate, { zone: env.BUSINESS_TIMEZONE }).startOf('day');
+  const startsAt = localDay.toUTC().toISO();
+  const endsAt = localDay.endOf('day').toUTC().toISO();
+
+  const { data: appointments, error: lookupError } = await supabase
+    .from('appointments')
+    .select('id')
+    .gte('starts_at', startsAt)
+    .lt('starts_at', endsAt);
+
+  if (lookupError) {
+    throw new HttpError(502, 'No se pudieron buscar los turnos para limpiar.', lookupError);
+  }
+
+  const appointmentIds = (appointments ?? []).map((appointment) => appointment.id);
+
+  if (appointmentIds.length === 0) {
+    return { deleted: 0 };
+  }
+
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .in('id', appointmentIds);
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo limpiar el historial.', error);
+  }
+
+  return { deleted: appointmentIds.length };
+}
+
 export async function updateSettings(input: z.infer<typeof updateSettingsSchema>) {
   const parsed = updateSettingsSchema.parse(input);
 

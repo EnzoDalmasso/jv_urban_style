@@ -818,6 +818,35 @@ select option {
   margin-top: 14px;
 }
 
+.staff-history-toggle {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #f6f1e7;
+  cursor: pointer;
+  text-align: left;
+}
+
+.staff-history-toggle span {
+  color: #d7b25d;
+  font-weight: 900;
+}
+
+.staff-history-toggle small {
+  color: #a9a39a;
+}
+
+.staff-history-toggle svg {
+  color: #d7b25d;
+}
+
 .appointment-group h3 {
   margin: 0;
   color: #d7b25d;

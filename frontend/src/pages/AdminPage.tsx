@@ -15,6 +15,7 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import {
+  clearAdminAppointments,
   createAdminService,
   createAdminStaff,
   deleteAdminService,
@@ -121,6 +122,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [openPanels, setOpenPanels] = useState(defaultOpenPanels);
+  const [openStaffHistory, setOpenStaffHistory] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!pin) {
@@ -169,6 +171,13 @@ export function AdminPage() {
     setOpenPanels((current) => ({
       ...current,
       [panelId]: !current[panelId]
+    }));
+  }
+
+  function toggleStaffHistory(staffId: string) {
+    setOpenStaffHistory((current) => ({
+      ...current,
+      [staffId]: !current[staffId]
     }));
   }
 
@@ -318,6 +327,21 @@ export function AdminPage() {
         whatsappWindow.close();
       }
     }
+  }
+
+  async function clearDayHistory() {
+    const confirmed = window.confirm(
+      `Esto borra todos los turnos del ${date} y libera esos horarios. ¿Querés limpiar el historial de pruebas?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await runAdminAction('clear-history', async () => {
+      await clearAdminAppointments(pin, date);
+      await reload();
+    });
   }
 
   async function runAdminAction(actionId: string, action: () => Promise<void>) {
@@ -863,7 +887,15 @@ export function AdminPage() {
                 </div>
                 {openPanels.history ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
               </button>
-              <CalendarClock aria-hidden="true" />
+              <button
+                className="icon-text-button danger compact-action"
+                type="button"
+                onClick={clearDayHistory}
+                disabled={saving === 'clear-history' || summary.appointments.length === 0}
+              >
+                <Trash2 aria-hidden="true" />
+                Limpiar
+              </button>
             </div>
 
             {openPanels.history && (
@@ -872,7 +904,17 @@ export function AdminPage() {
 
             {staffHistory.map(({ staff, appointments }) => (
               <div className="appointment-group" key={staff.id}>
-                <h3>{staff.full_name}</h3>
+                <button
+                  className="staff-history-toggle"
+                  type="button"
+                  onClick={() => toggleStaffHistory(staff.id)}
+                  aria-expanded={Boolean(openStaffHistory[staff.id])}
+                >
+                  <span>{staff.full_name}</span>
+                  <small>{appointments.length} turnos</small>
+                  {openStaffHistory[staff.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+                </button>
+                {openStaffHistory[staff.id] && (
                 <div className="appointment-list">
                   {appointments.length === 0 && (
                     <article className="appointment-card empty">
@@ -962,6 +1004,7 @@ export function AdminPage() {
                     );
                   })}
                 </div>
+                )}
               </div>
             ))}
               </>
