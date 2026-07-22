@@ -1,6 +1,8 @@
 import {
   CalendarClock,
   Check,
+  ChevronDown,
+  ChevronRight,
   Clock,
   LogOut,
   Minus,
@@ -31,6 +33,17 @@ import type { AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '
 
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'history';
+
+const defaultOpenPanels: Record<AdminPanelId, boolean> = {
+  payments: false,
+  services: false,
+  staff: false,
+  hours: false,
+  specialHours: false,
+  history: true
+};
+
 function todayISO() {
   const date = new Date();
   const year = date.getFullYear();
@@ -41,6 +54,14 @@ function todayISO() {
 
 function shortTime(value: string) {
   return value.slice(0, 5);
+}
+
+function minutesToHours(minutes: number) {
+  return Number((Number(minutes) / 60).toFixed(2));
+}
+
+function hoursToMinutes(hours: string) {
+  return Math.max(0, Math.round(Number(hours || 0) * 60));
 }
 
 function formatPrice(price: number) {
@@ -99,6 +120,7 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [openPanels, setOpenPanels] = useState(defaultOpenPanels);
 
   useEffect(() => {
     if (!pin) {
@@ -143,6 +165,13 @@ export function AdminPage() {
     setSummary(null);
   }
 
+  function togglePanel(panelId: AdminPanelId) {
+    setOpenPanels((current) => ({
+      ...current,
+      [panelId]: !current[panelId]
+    }));
+  }
+
   async function reload() {
     if (!pin) {
       return;
@@ -167,6 +196,7 @@ export function AdminPage() {
   }
 
   async function addService() {
+    setOpenPanels((current) => ({ ...current, services: true }));
     await runAdminAction('new-service', async () => {
       await createAdminService(pin, {
         name: 'Nuevo servicio',
@@ -210,6 +240,7 @@ export function AdminPage() {
   }
 
   async function addStaff() {
+    setOpenPanels((current) => ({ ...current, staff: true }));
     await runAdminAction('new-staff', async () => {
       await createAdminStaff(pin, {
         fullName: 'Nuevo profesional',
@@ -374,25 +405,36 @@ export function AdminPage() {
       {summary && (
         <div className="admin-grid">
           <section className="admin-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Cobros</p>
-                <h2>Seña y cancelación</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('payments')}
+                aria-expanded={openPanels.payments}
+              >
+                <div>
+                  <p className="eyebrow">Cobros</p>
+                  <h2>Seña y cancelación</h2>
+                </div>
+                {openPanels.payments ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <Save aria-hidden="true" />
             </div>
 
+            {openPanels.payments && (
+              <>
             <div className="settings-grid">
               <label>
-                Minutos mínimos para cancelar
+                Horas mínimas para cancelar
                 <input
                   type="number"
                   min={0}
-                  value={summary.settings.cancellation_notice_minutes}
+                  step={0.5}
+                  value={minutesToHours(summary.settings.cancellation_notice_minutes)}
                   onChange={(event) => patchSummary({
                     settings: {
                       ...summary.settings,
-                      cancellation_notice_minutes: Number(event.target.value)
+                      cancellation_notice_minutes: hoursToMinutes(event.target.value)
                     }
                   })}
                 />
@@ -492,14 +534,24 @@ export function AdminPage() {
               <Check aria-hidden="true" />
               Guardar politica
             </button>
+              </>
+            )}
           </section>
 
           <section className="admin-panel wide">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Servicios</p>
-                <h2>Precios y duración</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('services')}
+                aria-expanded={openPanels.services}
+              >
+                <div>
+                  <p className="eyebrow">Servicios</p>
+                  <h2>Precios y duración</h2>
+                </div>
+                {openPanels.services ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <button
                 className="icon-button"
                 type="button"
@@ -511,6 +563,7 @@ export function AdminPage() {
               </button>
             </div>
 
+            {openPanels.services && (
             <div className="editable-list">
               {summary.services.map((service) => (
                 <div className="editable-row" key={service.id}>
@@ -575,14 +628,23 @@ export function AdminPage() {
                 </div>
               ))}
             </div>
+            )}
           </section>
 
           <section className="admin-panel wide">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Equipo</p>
-                <h2>Profesionales</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('staff')}
+                aria-expanded={openPanels.staff}
+              >
+                <div>
+                  <p className="eyebrow">Equipo</p>
+                  <h2>Profesionales</h2>
+                </div>
+                {openPanels.staff ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <button
                 className="icon-button"
                 type="button"
@@ -594,6 +656,7 @@ export function AdminPage() {
               </button>
             </div>
 
+            {openPanels.staff && (
             <div className="editable-list">
               {summary.staff.map((person) => (
                 <div className="staff-row" key={person.id}>
@@ -602,14 +665,6 @@ export function AdminPage() {
                     onChange={(event) => patchSummary({
                       staff: summary.staff.map((item) => (
                         item.id === person.id ? { ...item, full_name: event.target.value } : item
-                      ))
-                    })}
-                  />
-                  <input
-                    value={person.role ?? 'barber'}
-                    onChange={(event) => patchSummary({
-                      staff: summary.staff.map((item) => (
-                        item.id === person.id ? { ...item, role: event.target.value } : item
                       ))
                     })}
                   />
@@ -646,17 +701,27 @@ export function AdminPage() {
                 </div>
               ))}
             </div>
+            )}
           </section>
 
           <section className="admin-panel wide">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Horarios</p>
-                <h2>Semana laboral</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('hours')}
+                aria-expanded={openPanels.hours}
+              >
+                <div>
+                  <p className="eyebrow">Horarios</p>
+                  <h2>Semana laboral</h2>
+                </div>
+                {openPanels.hours ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <Clock aria-hidden="true" />
             </div>
 
+            {openPanels.hours && (
             <div className="hours-list">
               {summary.businessHours.map((hours) => (
                 <div className="hours-row" key={`${hours.staff_id ?? 'global'}-${hours.day_of_week}`}>
@@ -704,17 +769,28 @@ export function AdminPage() {
                 </div>
               ))}
             </div>
+            )}
           </section>
 
           <section className="admin-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Feriados</p>
-                <h2>Horario especial</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('specialHours')}
+                aria-expanded={openPanels.specialHours}
+              >
+                <div>
+                  <p className="eyebrow">Feriados</p>
+                  <h2>Horario especial</h2>
+                </div>
+                {openPanels.specialHours ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <CalendarClock aria-hidden="true" />
             </div>
 
+            {openPanels.specialHours && (
+              <>
             <form className="stack-form" onSubmit={addSpecialHours}>
               <label>
                 Fecha
@@ -769,17 +845,29 @@ export function AdminPage() {
                 </div>
               ))}
             </div>
+              </>
+            )}
           </section>
 
           <section className="admin-panel wide">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Historial</p>
-                <h2>Turnos del dia</h2>
-              </div>
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('history')}
+                aria-expanded={openPanels.history}
+              >
+                <div>
+                  <p className="eyebrow">Historial</p>
+                  <h2>Turnos del dia</h2>
+                </div>
+                {openPanels.history ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
               <CalendarClock aria-hidden="true" />
             </div>
 
+            {openPanels.history && (
+              <>
             {staffHistory.length === 0 && <p className="muted">Sin profesionales activos.</p>}
 
             {staffHistory.map(({ staff, appointments }) => (
@@ -876,6 +964,8 @@ export function AdminPage() {
                 </div>
               </div>
             ))}
+              </>
+            )}
           </section>
         </div>
       )}

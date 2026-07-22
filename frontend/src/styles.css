@@ -235,8 +235,35 @@ h2 {
   margin-bottom: 18px;
 }
 
+.collapsible-heading {
+  margin-bottom: 0;
+}
+
 .panel-heading svg {
   color: #d7b25d;
+}
+
+.panel-toggle-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.panel-toggle-button svg {
+  flex: 0 0 auto;
+}
+
+.collapsible-heading + * {
+  margin-top: 18px;
 }
 
 .service-grid {
@@ -922,7 +949,7 @@ select option {
   }
 
   .staff-row {
-    grid-template-columns: 1.4fr 1fr 100px 46px 46px;
+    grid-template-columns: 1.4fr 100px 46px 46px;
     align-items: end;
   }
 
