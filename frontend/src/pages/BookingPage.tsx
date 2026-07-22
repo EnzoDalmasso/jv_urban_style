@@ -1,0 +1,194 @@
+import { CheckCircle2, Scissors, Sparkles } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
+import { DateTimeSelector } from '../components/DateTimeSelector';
+import { createAppointment, fetchServices } from '../lib/api';
+import type { AvailabilitySlot, CreateAppointmentResponse, Service } from '../types';
+
+function formatPrice(price: number) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0
+  }).format(Number(price));
+}
+
+export function BookingPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | undefined>();
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
+
+  useEffect(() => {
+    fetchServices()
+      .then((response) => setServices(response.services))
+      .finally(() => setLoadingServices(false));
+  }, []);
+
+  function toggleService(serviceId: string) {
+    setSelectedSlot(undefined);
+    setConfirmation(null);
+    setSelectedServiceIds((current) => (
+      current.includes(serviceId)
+        ? current.filter((id) => id !== serviceId)
+        : [...current, serviceId]
+    ));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!selectedSlot) {
+      setError('Elegir un horario disponible.');
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    setSubmitting(true);
+
+    try {
+      const response = await createAppointment({
+        serviceIds: selectedServiceIds,
+        staffId: selectedSlot.staffId,
+        startsAt: selectedSlot.startsAt,
+        client: {
+          firstName: String(formData.get('firstName') ?? ''),
+          lastName: String(formData.get('lastName') ?? ''),
+          phone: String(formData.get('phone') ?? ''),
+          notes: String(formData.get('clientNotes') ?? '')
+        },
+        notes: String(formData.get('notes') ?? '')
+      });
+
+      setConfirmation(response.appointment);
+      setSelectedSlot(undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pudimos crear el turno.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <main>
+      <section className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Distrito Barber</p>
+          <h1>Reservas urbanas, agenda prolija y estilo sin espera.</h1>
+          <p>
+            Elegi el servicio, encontra un horario libre en tiempo real y deja tu turno listo
+            en menos de un minuto.
+          </p>
+          <a className="primary-cta" href="#booking">
+            <Scissors aria-hidden="true" />
+            Reservar turno
+          </a>
+        </div>
+        <div className="hero-metric" aria-label="Resumen de servicios">
+          <Sparkles aria-hidden="true" />
+          <strong>10:00 - 19:00</strong>
+          <span>Cortes, barba y color con profesionales activos.</span>
+        </div>
+      </section>
+
+      <section className="booking-layout" id="booking">
+        <div className="booking-panel" aria-labelledby="services-title">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Paso 1</p>
+              <h2 id="services-title">Selecciona servicios</h2>
+            </div>
+            <Scissors aria-hidden="true" />
+          </div>
+
+          <div className="service-grid">
+            {loadingServices && <p className="muted">Cargando servicios...</p>}
+
+            {services.map((service) => {
+              const active = selectedServiceIds.includes(service.id);
+
+              return (
+                <button
+                  className={active ? 'service-card active' : 'service-card'}
+                  key={service.id}
+                  type="button"
+                  onClick={() => toggleService(service.id)}
+                >
+                  <span className="service-topline">
+                    <strong>{service.name}</strong>
+                    {active && <CheckCircle2 aria-label="Seleccionado" />}
+                  </span>
+                  <span>{service.description}</span>
+                  <span className="service-meta">
+                    {service.duration_minutes} min - {formatPrice(service.price)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <DateTimeSelector
+          serviceIds={selectedServiceIds}
+          selectedSlot={selectedSlot}
+          onSelectSlot={setSelectedSlot}
+        />
+
+        <aside className="summary-panel" aria-label="Resumen de reserva">
+          <p className="eyebrow">Paso 3</p>
+          <h2>Confirmacion</h2>
+
+          {confirmation ? (
+            <div className="summary-box">
+              <span>Codigo {confirmation.publicCode}</span>
+              <strong>{confirmation.staffName}</strong>
+              <p>Total: {formatPrice(confirmation.totalPrice)}</p>
+              {confirmation.depositRequired && (
+                <p>Sena sugerida: {formatPrice(confirmation.depositAmount)}</p>
+              )}
+            </div>
+          ) : (
+            <form className="stack-form" onSubmit={handleSubmit}>
+              <div className="selected-slot-copy">
+                {selectedSlot ? (
+                  <>
+                    <span>{selectedSlot.time}</span>
+                    <strong>{selectedSlot.staffName}</strong>
+                  </>
+                ) : (
+                  <p className="muted">El resumen aparece cuando elijas un horario.</p>
+                )}
+              </div>
+
+              <label>
+                Nombre
+                <input name="firstName" required minLength={2} />
+              </label>
+              <label>
+                Apellido
+                <input name="lastName" required minLength={2} />
+              </label>
+              <label>
+                WhatsApp
+                <input name="phone" required minLength={6} />
+              </label>
+              <label>
+                Notas
+                <textarea name="notes" rows={3} />
+              </label>
+
+              {error && <p className="error-text">{error}</p>}
+
+              <button className="primary-cta form-cta" type="submit" disabled={submitting || !selectedSlot}>
+                {submitting ? 'Reservando...' : 'Confirmar turno'}
+              </button>
+            </form>
+          )}
+        </aside>
+      </section>
+    </main>
+  );
+}

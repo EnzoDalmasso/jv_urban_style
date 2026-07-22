@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { demoServices, demoStaff } from '../lib/demoData.js';
 import { supabase } from '../lib/supabase.js';
 import { HttpError } from '../utils/httpError.js';
+import { isMissingSchemaError } from '../utils/supabaseError.js';
 
 const uuidSchema = z.string().uuid();
 
@@ -13,11 +14,14 @@ type CalculateAvailabilityInput = {
   staffId?: string;
 };
 
-type ServiceRow = {
+export type ServiceRow = {
   id: string;
   name: string;
+  description?: string | null;
   duration_minutes: number;
-  price: number;
+  price: number | string;
+  sort_order?: number;
+  is_active?: boolean;
 };
 
 type StaffRow = {
@@ -34,18 +38,35 @@ type BusinessHoursRow = {
   is_closed: boolean;
 };
 
+type SpecialBusinessHoursRow = {
+  id: string;
+  staff_id: string | null;
+  date: string;
+  opens_at: string;
+  closes_at: string;
+  is_closed: boolean;
+  reason: string | null;
+};
+
 type BusyRow = {
   staff_id: string;
   starts_at: string;
   ends_at: string;
 };
 
-type Slot = {
+type BusyInterval = {
+  interval: Interval;
+  reason: 'Reservado' | 'No disponible';
+};
+
+export type Slot = {
   time: string;
   startsAt: string;
   endsAt: string;
   staffId: string;
   staffName: string;
+  isAvailable: boolean;
+  reason?: string;
 };
 
 export async function calculateAvailability(input: CalculateAvailabilityInput) {
@@ -62,8 +83,11 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
   const dayEndUtc = localDay.endOf('day').toUTC();
   const dayOfWeek = localDay.weekday % 7;
 
-  const services = await getServices(serviceIds);
-  const durationMinutes = services.reduce((sum, service) => sum + service.duration_minutes, 0);
+  const services = await getActiveServicesByIds(serviceIds);
+  const durationMinutes = services.reduce(
+    (sum, service) => sum + Number(service.duration_minutes),
+    0
+  );
 
   if (!supabase) {
     return calculateDemoAvailability({
@@ -87,26 +111,27 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
   }
 
   const staffIds = staff.map((person) => person.id);
-  const [hours, appointments, timeOff] = await Promise.all([
+  const [weeklyHours, specialHours, appointments, timeOff] = await Promise.all([
     getBusinessHours(dayOfWeek, staffIds),
+    getSpecialBusinessHours(input.date, staffIds),
     getAppointments(dayStartUtc.toISO(), dayEndUtc.toISO(), staffIds),
     getTimeOff(dayStartUtc.toISO(), dayEndUtc.toISO(), staffIds)
   ]);
 
   const slots = staff.flatMap((person) => {
-    const hoursForStaff = pickBusinessHours(hours, person.id);
+    const workingHours = pickWorkingHours(weeklyHours, specialHours, person.id);
 
-    if (!hoursForStaff || hoursForStaff.is_closed) {
+    if (!workingHours || workingHours.is_closed) {
       return [];
     }
 
     const personZone = person.timezone || zone;
-    const opensAt = localTimeToDateTime(input.date, hoursForStaff.opens_at, personZone);
-    const closesAt = localTimeToDateTime(input.date, hoursForStaff.closes_at, personZone);
-    const busyIntervals = toBusyIntervals([
-      ...appointments.filter((item) => item.staff_id === person.id),
-      ...timeOff.filter((item) => item.staff_id === person.id)
-    ]);
+    const opensAt = localTimeToDateTime(input.date, workingHours.opens_at, personZone);
+    const closesAt = localTimeToDateTime(input.date, workingHours.closes_at, personZone);
+    const busyIntervals = toBusyIntervals({
+      appointments: appointments.filter((item) => item.staff_id === person.id),
+      timeOff: timeOff.filter((item) => item.staff_id === person.id)
+    });
 
     return buildSlots({
       opensAt,
@@ -126,7 +151,7 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
   };
 }
 
-async function getServices(serviceIds: string[]) {
+export async function getActiveServicesByIds(serviceIds: string[]) {
   if (!supabase) {
     const services = demoServices.filter((service) => serviceIds.includes(service.id));
 
@@ -139,7 +164,7 @@ async function getServices(serviceIds: string[]) {
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, name, duration_minutes, price')
+    .select('id, name, description, duration_minutes, price, sort_order, is_active')
     .in('id', serviceIds)
     .eq('is_active', true)
     .returns<ServiceRow[]>();
@@ -175,11 +200,14 @@ function calculateDemoAvailability(params: {
     };
   }
 
-  const demoBusyIntervals = [
-    Interval.fromDateTimes(
-      localTimeToDateTime(params.date, '13:00:00', params.zone).toUTC(),
-      localTimeToDateTime(params.date, '14:00:00', params.zone).toUTC()
-    )
+  const demoBusyIntervals: BusyInterval[] = [
+    {
+      interval: Interval.fromDateTimes(
+        localTimeToDateTime(params.date, '13:00:00', params.zone).toUTC(),
+        localTimeToDateTime(params.date, '14:00:00', params.zone).toUTC()
+      ),
+      reason: 'Reservado'
+    }
   ];
 
   const slots = staff.flatMap((person) => buildSlots({
@@ -266,6 +294,29 @@ async function getBusinessHours(dayOfWeek: number, staffIds: string[]) {
   return data ?? [];
 }
 
+async function getSpecialBusinessHours(date: string, staffIds: string[]) {
+  if (!supabase) {
+    throw new HttpError(500, 'Supabase no esta configurado.');
+  }
+
+  const { data, error } = await supabase
+    .from('special_business_hours')
+    .select('id, staff_id, date, opens_at, closes_at, is_closed, reason')
+    .eq('date', date)
+    .or(`staff_id.is.null,staff_id.in.(${staffIds.join(',')})`)
+    .returns<SpecialBusinessHoursRow[]>();
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return [];
+    }
+
+    throw new HttpError(502, 'No se pudieron obtener horarios especiales.', error);
+  }
+
+  return data ?? [];
+}
+
 async function getAppointments(dayStartIso: string | null, dayEndIso: string | null, staffIds: string[]) {
   if (!supabase) {
     throw new HttpError(500, 'Supabase no esta configurado.');
@@ -315,9 +366,20 @@ async function getTimeOff(dayStartIso: string | null, dayEndIso: string | null, 
   return data ?? [];
 }
 
-function pickBusinessHours(hours: BusinessHoursRow[], staffId: string) {
-  return hours.find((row) => row.staff_id === staffId)
-    ?? hours.find((row) => row.staff_id === null);
+function pickWorkingHours(
+  weeklyHours: BusinessHoursRow[],
+  specialHours: SpecialBusinessHoursRow[],
+  staffId: string
+) {
+  const special = specialHours.find((row) => row.staff_id === staffId)
+    ?? specialHours.find((row) => row.staff_id === null);
+
+  if (special) {
+    return special;
+  }
+
+  return weeklyHours.find((row) => row.staff_id === staffId)
+    ?? weeklyHours.find((row) => row.staff_id === null);
 }
 
 function localTimeToDateTime(date: string, time: string, zone: string) {
@@ -325,10 +387,19 @@ function localTimeToDateTime(date: string, time: string, zone: string) {
   return DateTime.fromISO(`${date}T${cleanTime}`, { zone });
 }
 
-function toBusyIntervals(rows: BusyRow[]) {
-  return rows
-    .map((row) => Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)))
-    .filter((interval) => interval.isValid);
+function toBusyIntervals(rows: { appointments: BusyRow[]; timeOff: BusyRow[] }) {
+  const appointmentIntervals = rows.appointments.map((row) => ({
+    interval: Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)),
+    reason: 'Reservado' as const
+  }));
+
+  const timeOffIntervals = rows.timeOff.map((row) => ({
+    interval: Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)),
+    reason: 'No disponible' as const
+  }));
+
+  return [...appointmentIntervals, ...timeOffIntervals]
+    .filter((item) => item.interval.isValid);
 }
 
 function buildSlots(params: {
@@ -336,7 +407,7 @@ function buildSlots(params: {
   closesAt: DateTime;
   durationMinutes: number;
   intervalMinutes: number;
-  busyIntervals: Interval[];
+  busyIntervals: BusyInterval[];
   staff: StaffRow;
 }): Slot[] {
   const slots: Slot[] = [];
@@ -345,15 +416,19 @@ function buildSlots(params: {
   while (cursor.plus({ minutes: params.durationMinutes }) <= params.closesAt) {
     const slotEnd = cursor.plus({ minutes: params.durationMinutes });
     const slotInterval = Interval.fromDateTimes(cursor.toUTC(), slotEnd.toUTC());
-    const overlapsBusyTime = params.busyIntervals.some((busy) => busy.overlaps(slotInterval));
+    const busy = params.busyIntervals.find((item) => item.interval.overlaps(slotInterval));
+    const startsAt = cursor.toUTC().toISO();
+    const endsAt = slotEnd.toUTC().toISO();
 
-    if (!overlapsBusyTime) {
+    if (startsAt && endsAt) {
       slots.push({
         time: cursor.toFormat('HH:mm'),
-        startsAt: cursor.toUTC().toISO() ?? '',
-        endsAt: slotEnd.toUTC().toISO() ?? '',
+        startsAt,
+        endsAt,
         staffId: params.staff.id,
-        staffName: params.staff.full_name
+        staffName: params.staff.full_name,
+        isAvailable: !busy,
+        reason: busy?.reason
       });
     }
 

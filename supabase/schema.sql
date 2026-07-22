@@ -52,6 +52,15 @@ create table if not exists public.staff_services (
   primary key (staff_id, service_id)
 );
 
+create table if not exists public.shop_settings (
+  id boolean primary key default true,
+  cancellation_notice_minutes integer not null default 120 check (cancellation_notice_minutes >= 0),
+  deposit_percentage numeric(5,2) not null default 50 check (deposit_percentage >= 0 and deposit_percentage <= 100),
+  require_deposit_for_late_cancellation boolean not null default true,
+  updated_at timestamptz not null default now(),
+  constraint shop_settings_singleton check (id)
+);
+
 create table if not exists public.business_hours (
   id bigserial primary key,
   staff_id uuid references public.staff(id) on delete cascade,
@@ -60,6 +69,19 @@ create table if not exists public.business_hours (
   closes_at time not null,
   is_closed boolean not null default false,
   constraint business_hours_valid_range check (opens_at < closes_at)
+);
+
+create table if not exists public.special_business_hours (
+  id uuid primary key default gen_random_uuid(),
+  staff_id uuid references public.staff(id) on delete cascade,
+  date date not null,
+  opens_at time not null default time '10:00',
+  closes_at time not null default time '19:00',
+  is_closed boolean not null default false,
+  reason text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint special_business_hours_valid_range check (is_closed = true or opens_at < closes_at)
 );
 
 create table if not exists public.time_off (
@@ -83,6 +105,11 @@ create table if not exists public.appointments (
   notes text,
   total_duration_minutes integer not null check (total_duration_minutes > 0),
   total_price numeric(10,2) not null check (total_price >= 0),
+  deposit_required boolean not null default false,
+  deposit_amount numeric(10,2) not null default 0 check (deposit_amount >= 0),
+  deposit_status text not null default 'not_required'
+    check (deposit_status in ('not_required', 'pending', 'paid', 'waived')),
+  cancellation_cutoff_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint appointments_valid_range check (starts_at < ends_at),
@@ -117,6 +144,14 @@ create unique index if not exists business_hours_global_day_unique_idx
   on public.business_hours (day_of_week)
   where staff_id is null;
 
+create unique index if not exists special_business_hours_staff_date_unique_idx
+  on public.special_business_hours (staff_id, date)
+  where staff_id is not null;
+
+create unique index if not exists special_business_hours_global_date_unique_idx
+  on public.special_business_hours (date)
+  where staff_id is null;
+
 create index if not exists appointments_staff_time_idx
   on public.appointments (staff_id, starts_at, ends_at)
   where status in ('pending', 'confirmed');
@@ -142,11 +177,27 @@ create trigger appointments_set_updated_at
 before update on public.appointments
 for each row execute function public.set_updated_at();
 
+drop trigger if exists shop_settings_set_updated_at on public.shop_settings;
+create trigger shop_settings_set_updated_at
+before update on public.shop_settings
+for each row execute function public.set_updated_at();
+
+drop trigger if exists special_business_hours_set_updated_at on public.special_business_hours;
+create trigger special_business_hours_set_updated_at
+before update on public.special_business_hours
+for each row execute function public.set_updated_at();
+
+insert into public.shop_settings (id)
+values (true)
+on conflict (id) do nothing;
+
 alter table public.clients enable row level security;
 alter table public.services enable row level security;
 alter table public.staff enable row level security;
 alter table public.staff_services enable row level security;
+alter table public.shop_settings enable row level security;
 alter table public.business_hours enable row level security;
+alter table public.special_business_hours enable row level security;
 alter table public.time_off enable row level security;
 alter table public.appointments enable row level security;
 alter table public.appointment_services enable row level security;
@@ -172,6 +223,12 @@ using (true);
 drop policy if exists "Public can read business hours" on public.business_hours;
 create policy "Public can read business hours"
 on public.business_hours for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Public can read special business hours" on public.special_business_hours;
+create policy "Public can read special business hours"
+on public.special_business_hours for select
 to anon, authenticated
 using (true);
 

@@ -45,3 +45,37 @@ export const demoStaff = [
     timezone: 'America/Argentina/Buenos_Aires'
   }
 ];
+
+export const demoSettings = {
+  cancellation_notice_minutes: 120,
+  deposit_percentage: 50,
+  require_deposit_for_late_cancellation: true
+};
+
+export const demoBusinessHours: Array<{
+  id: number;
+  staff_id: string | null;
+  day_of_week: number;
+  opens_at: string;
+  closes_at: string;
+  is_closed: boolean;
+}> = Array.from({ length: 7 }, (_, day) => ({
+  id: day + 1,
+  staff_id: null,
+  day_of_week: day,
+  opens_at: day === 0 ? '10:00:00' : '10:00:00',
+  closes_at: day === 0 ? '14:00:00' : '19:00:00',
+  is_closed: day === 0
+}));
+
+export const demoSpecialBusinessHours: Array<{
+  id: string;
+  staff_id: string | null;
+  date: string;
+  opens_at: string;
+  closes_at: string;
+  is_closed: boolean;
+  reason: string | null;
+}> = [];
+
+export const demoAppointments: unknown[] = [];

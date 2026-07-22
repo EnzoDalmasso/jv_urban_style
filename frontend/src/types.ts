@@ -5,6 +5,7 @@ export type Service = {
   duration_minutes: number;
   price: number;
   sort_order: number;
+  is_active?: boolean;
 };
 
 export type AvailabilitySlot = {
@@ -13,6 +14,8 @@ export type AvailabilitySlot = {
   endsAt: string;
   staffId: string;
   staffName: string;
+  isAvailable: boolean;
+  reason?: string;
 };
 
 export type AvailabilityResponse = {
@@ -20,4 +23,83 @@ export type AvailabilityResponse = {
   timezone: string;
   serviceDurationMinutes: number;
   slots: AvailabilitySlot[];
+};
+
+export type Staff = {
+  id: string;
+  full_name: string;
+  role?: string;
+  timezone: string;
+  is_active?: boolean;
+};
+
+export type ShopSettings = {
+  cancellation_notice_minutes: number;
+  deposit_percentage: number;
+  require_deposit_for_late_cancellation: boolean;
+};
+
+export type BusinessHours = {
+  id: number;
+  staff_id: string | null;
+  day_of_week: number;
+  opens_at: string;
+  closes_at: string;
+  is_closed: boolean;
+};
+
+export type SpecialHours = {
+  id: string;
+  staff_id: string | null;
+  date: string;
+  opens_at: string;
+  closes_at: string;
+  is_closed: boolean;
+  reason: string | null;
+};
+
+export type AdminAppointment = {
+  id: string;
+  publicCode: string;
+  startsAt: string;
+  endsAt: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  notes: string | null;
+  totalDurationMinutes: number;
+  totalPrice: number;
+  depositRequired: boolean;
+  depositAmount: number;
+  depositStatus: string;
+  clientName: string;
+  clientPhone: string;
+  staffId: string;
+  staffName: string;
+  services: Array<{
+    name: string;
+    durationMinutes: number;
+    price: number;
+  }>;
+};
+
+export type AdminSummary = {
+  settings: ShopSettings;
+  services: Service[];
+  staff: Staff[];
+  businessHours: BusinessHours[];
+  specialHours: SpecialHours[];
+  appointments: AdminAppointment[];
+};
+
+export type CreateAppointmentResponse = {
+  appointment: {
+    publicCode: string;
+    startsAt: string;
+    endsAt: string;
+    staffName: string;
+    totalPrice: number;
+    depositRequired: boolean;
+    depositAmount: number;
+    depositStatus: string;
+    cancellationCutoffAt: string | null;
+  };
 };

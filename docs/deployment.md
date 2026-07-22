@@ -31,6 +31,7 @@ Variables en Render:
 ```env
 NODE_ENV=production
 DEMO_MODE=false
+ADMIN_PIN=un-pin-privado
 BUSINESS_TIMEZONE=America/Argentina/Buenos_Aires
 SLOT_INTERVAL_MINUTES=15
 CORS_ORIGIN=https://TU-FRONTEND.vercel.app
@@ -45,6 +46,21 @@ CORS_ORIGIN=*
 ```
 
 Despues de desplegar Vercel, cambialo por la URL real del frontend.
+
+## Actualizaciones de Supabase
+
+Si la base ya existe, ejecutar tambien:
+
+```txt
+supabase/migrations/20260722_admin_panel.sql
+```
+
+Esto agrega:
+
+- Configuracion de sena y plazo minimo de cancelacion.
+- Horarios especiales por fecha.
+- Campos de sena en turnos.
+- Soporte para historial diario por profesional.
 
 ## 3. Vercel
 
@@ -63,3 +79,9 @@ VITE_API_URL=https://TU-BACKEND.onrender.com
 ```
 
 Despues de guardar la variable, hacer redeploy del frontend.
+
+El panel del dueno queda en:
+
+```txt
+https://TU-FRONTEND.vercel.app/admin
+```

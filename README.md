@@ -41,6 +41,7 @@ Backend (`backend/.env`):
 ```env
 PORT=4000
 CORS_ORIGIN=http://localhost:5173
+ADMIN_PIN=change-this-pin
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 BUSINESS_TIMEZONE=America/Argentina/Buenos_Aires
@@ -59,8 +60,15 @@ VITE_API_URL=http://localhost:4000
 - `GET /api/services`
 - `GET /api/availability?date=YYYY-MM-DD&serviceIds=id1,id2`
 - `GET /api/availability?date=YYYY-MM-DD&serviceId=id&staffId=id`
+- `POST /api/appointments`
+- `GET /api/admin/summary?date=YYYY-MM-DD`
+- `PATCH /api/admin/services/:id`
+- `PUT /api/admin/business-hours`
+- `POST /api/admin/special-hours`
 
 La disponibilidad se calcula en servidor para evitar doble reserva. El SQL tambien incluye una restriccion de exclusion en PostgreSQL para bloquear solapamientos por profesional.
+
+El panel del dueno vive en `/admin` y requiere el PIN configurado en `ADMIN_PIN`.
 
 ## Arranque local
 

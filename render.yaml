@@ -15,6 +15,8 @@ services:
         value: production
       - key: DEMO_MODE
         value: false
+      - key: ADMIN_PIN
+        sync: false
       - key: BUSINESS_TIMEZONE
         value: America/Argentina/Buenos_Aires
       - key: SLOT_INTERVAL_MINUTES

@@ -27,7 +27,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -181,6 +182,15 @@ h2 {
   border-color: rgba(215, 178, 93, 0.72);
 }
 
+.slot-button:disabled,
+.primary-cta:disabled,
+.secondary-button:disabled,
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
 .service-card {
   display: grid;
   gap: 10px;
@@ -194,6 +204,11 @@ h2 {
 .slot-button.active {
   border-color: #d7b25d;
   background: rgba(215, 178, 93, 0.14);
+}
+
+.slot-button.disabled {
+  border-color: rgba(255, 143, 143, 0.28);
+  background: rgba(255, 143, 143, 0.08);
 }
 
 .service-topline,
@@ -305,6 +320,320 @@ h2 {
   color: #bdb6ac;
 }
 
+.stack-form {
+  display: grid;
+  gap: 12px;
+}
+
+.stack-form label,
+.settings-grid label,
+.admin-toolbar label {
+  display: grid;
+  gap: 7px;
+  color: #d9d2c6;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f1e7;
+  padding: 10px 12px;
+  outline: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #d7b25d;
+  box-shadow: 0 0 0 3px rgba(215, 178, 93, 0.14);
+}
+
+select option {
+  background: #111318;
+  color: #f6f1e7;
+}
+
+.form-cta {
+  width: 100%;
+  justify-content: center;
+}
+
+.selected-slot-copy {
+  min-height: 64px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(246, 241, 231, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.selected-slot-copy span {
+  color: #42f4c8;
+  font-weight: 850;
+}
+
+.admin-shell {
+  width: min(1280px, calc(100% - 28px));
+  padding: 32px 0 54px;
+}
+
+.admin-shell.compact {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.admin-login {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 8px;
+  background: rgba(11, 12, 16, 0.88);
+}
+
+.admin-login svg {
+  color: #42f4c8;
+}
+
+.admin-header,
+.admin-toolbar,
+.admin-stat,
+.editable-row,
+.hours-row,
+.mini-row,
+.appointment-card,
+.status-actions,
+.inline-fields,
+.checkbox-row {
+  display: flex;
+  align-items: center;
+}
+
+.admin-header {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-header h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+}
+
+.admin-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 8px;
+  background: rgba(11, 12, 16, 0.78);
+}
+
+.admin-toolbar label {
+  min-width: min(260px, 100%);
+}
+
+.admin-stat {
+  gap: 8px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(246, 241, 231, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-stat svg,
+.icon-text-button svg,
+.secondary-button svg,
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-stat span {
+  color: #d7b25d;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.admin-stat small {
+  color: #a9a39a;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.admin-panel {
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 8px;
+  background: rgba(11, 12, 16, 0.82);
+  padding: 16px;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.editable-list,
+.hours-list,
+.mini-list,
+.appointment-list,
+.appointment-group {
+  display: grid;
+  gap: 10px;
+}
+
+.editable-row,
+.hours-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(246, 241, 231, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.hours-row strong {
+  color: #d7b25d;
+}
+
+.hours-row span {
+  color: #a9a39a;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.checkbox-row input {
+  width: 18px;
+  min-height: 18px;
+  accent-color: #d7b25d;
+}
+
+.compact-check {
+  min-width: 92px;
+}
+
+.inline-fields {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.inline-fields label {
+  flex: 1;
+}
+
+.mini-row {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(246, 241, 231, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.mini-row small {
+  color: #a9a39a;
+}
+
+.appointment-group {
+  margin-top: 14px;
+}
+
+.appointment-group h3 {
+  margin: 0;
+  color: #d7b25d;
+}
+
+.appointment-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(246, 241, 231, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.appointment-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.appointment-card small {
+  color: #a9a39a;
+}
+
+.status-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.status-actions button,
+.secondary-button,
+.icon-text-button,
+.icon-button {
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6f1e7;
+  cursor: pointer;
+}
+
+.status-actions button {
+  min-height: 38px;
+}
+
+.secondary-button,
+.icon-text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.secondary-button {
+  width: 100%;
+}
+
+.icon-button {
+  min-width: 42px;
+  min-height: 42px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.danger {
+  color: #ff8f8f;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -324,5 +653,33 @@ h2 {
 
   .slot-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-grid {
+    grid-template-columns: 0.88fr 1.12fr;
+  }
+
+  .admin-panel.wide {
+    grid-column: span 2;
+  }
+
+  .settings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .editable-row {
+    grid-template-columns: 1.4fr 120px 140px 100px 46px;
+    align-items: end;
+  }
+
+  .hours-row {
+    grid-template-columns: 140px 1fr 120px 120px 100px 46px;
+    align-items: end;
+  }
+
+  .appointment-card {
+    grid-template-columns: 1fr 1.35fr 240px;
+    align-items: center;
   }
 }

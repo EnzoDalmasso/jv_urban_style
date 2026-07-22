@@ -118,14 +118,19 @@ export function DateTimeSelector({
 
               return (
                 <button
-                  className={isSelected ? 'slot-button active' : 'slot-button'}
+                  className={[
+                    'slot-button',
+                    isSelected ? 'active' : '',
+                    slot.isAvailable ? '' : 'disabled'
+                  ].filter(Boolean).join(' ')}
                   key={`${slot.startsAt}-${slot.staffId}`}
                   type="button"
+                  disabled={!slot.isAvailable}
                   onClick={() => onSelectSlot(slot)}
                 >
                   <Clock aria-hidden="true" />
                   <span>{slot.time}</span>
-                  <small>{slot.staffName}</small>
+                  <small>{slot.isAvailable ? slot.staffName : (slot.reason ?? 'Reservado')}</small>
                 </button>
               );
             })}
