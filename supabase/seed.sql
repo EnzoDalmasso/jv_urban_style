@@ -15,8 +15,8 @@ where not exists (
 
 with seed_staff (full_name, role, bio) as (
   values
-    ('Nico Vega', 'barber', 'Especialista en fades y cortes urbanos.'),
-    ('Lara Cruz', 'stylist', 'Color, textura y terminaciones limpias.')
+    ('Joel', 'barber', 'Especialista en cortes urbanos y fades.'),
+    ('Gino', 'barber', 'Barbería clásica, perfilado y terminaciones limpias.')
 )
 insert into public.staff (full_name, role, bio)
 select full_name, role, bio
@@ -30,7 +30,25 @@ insert into public.staff_services (staff_id, service_id)
 select st.id, sv.id
 from public.staff st
 cross join public.services sv
-where st.full_name in ('Nico Vega', 'Lara Cruz')
+where st.full_name in ('Joel', 'Gino')
+on conflict do nothing;
+
+update public.staff
+set full_name = 'Joel',
+    bio = 'Especialista en cortes urbanos y fades.'
+where full_name = 'Nico Vega';
+
+update public.staff
+set full_name = 'Gino',
+    role = 'barber',
+    bio = 'Barbería clásica, perfilado y terminaciones limpias.'
+where full_name = 'Lara Cruz';
+
+insert into public.staff_services (staff_id, service_id)
+select st.id, sv.id
+from public.staff st
+cross join public.services sv
+where st.full_name in ('Joel', 'Gino')
 on conflict do nothing;
 
 insert into public.business_hours (staff_id, day_of_week, opens_at, closes_at, is_closed)

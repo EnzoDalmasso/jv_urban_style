@@ -9,6 +9,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { BrandLogo } from '../components/BrandLogo';
 import {
   deleteAdminSpecialHours,
   fetchAdminSummary,
@@ -16,11 +17,12 @@ import {
   saveAdminSpecialHours,
   updateAdminAppointmentStatus,
   updateAdminService,
+  updateAdminStaff,
   updateAdminSettings
 } from '../lib/api';
-import type { AdminSummary, BusinessHours, Service, ShopSettings } from '../types';
+import type { AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '../types';
 
-const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 function todayISO() {
   const date = new Date();
@@ -124,6 +126,17 @@ export function AdminPage() {
     setSaving(null);
   }
 
+  async function saveStaff(person: Staff) {
+    setSaving(person.id);
+    await updateAdminStaff(pin, person.id, {
+      fullName: person.full_name,
+      role: person.role,
+      isActive: Boolean(person.is_active ?? true)
+    });
+    await reload();
+    setSaving(null);
+  }
+
   async function saveHours(hours: BusinessHours) {
     setSaving(`hours-${hours.id}`);
     await saveAdminBusinessHours(pin, {
@@ -176,6 +189,7 @@ export function AdminPage() {
     return (
       <main className="admin-shell compact">
         <section className="admin-login">
+          <BrandLogo compact />
           <ShieldCheck aria-hidden="true" />
           <p className="eyebrow">Admin</p>
           <h1>Panel del local</h1>
@@ -203,7 +217,10 @@ export function AdminPage() {
       <header className="admin-header">
         <div>
           <p className="eyebrow">JV Urban Style</p>
-          <h1>Panel de agenda</h1>
+          <div className="admin-title-row">
+            <BrandLogo compact />
+            <h1>Panel de agenda</h1>
+          </div>
         </div>
         <button className="icon-text-button" type="button" onClick={logout}>
           <LogOut aria-hidden="true" />
@@ -237,14 +254,14 @@ export function AdminPage() {
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Cobros</p>
-                <h2>Sena y cancelacion</h2>
+                <h2>Seña y cancelación</h2>
               </div>
               <Save aria-hidden="true" />
             </div>
 
             <div className="settings-grid">
               <label>
-                Minutos minimos para cancelar
+                Minutos mínimos para cancelar
                 <input
                   type="number"
                   min={0}
@@ -258,7 +275,7 @@ export function AdminPage() {
                 />
               </label>
               <label>
-                Porcentaje de sena
+                Porcentaje de seña
                 <input
                   type="number"
                   min={0}
@@ -283,7 +300,7 @@ export function AdminPage() {
                     }
                   })}
                 />
-                Pedir sena
+                Pedir seña
               </label>
             </div>
 
@@ -302,7 +319,7 @@ export function AdminPage() {
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Servicios</p>
-                <h2>Precios y duracion</h2>
+                <h2>Precios y duración</h2>
               </div>
               <Scissors aria-hidden="true" />
             </div>
@@ -356,6 +373,60 @@ export function AdminPage() {
                     onClick={() => saveService(service)}
                     disabled={saving === service.id}
                     aria-label="Guardar servicio"
+                  >
+                    <Save aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="admin-panel wide">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">Equipo</p>
+                <h2>Profesionales</h2>
+              </div>
+              <Scissors aria-hidden="true" />
+            </div>
+
+            <div className="editable-list">
+              {summary.staff.map((person) => (
+                <div className="staff-row" key={person.id}>
+                  <input
+                    value={person.full_name}
+                    onChange={(event) => patchSummary({
+                      staff: summary.staff.map((item) => (
+                        item.id === person.id ? { ...item, full_name: event.target.value } : item
+                      ))
+                    })}
+                  />
+                  <input
+                    value={person.role ?? 'barber'}
+                    onChange={(event) => patchSummary({
+                      staff: summary.staff.map((item) => (
+                        item.id === person.id ? { ...item, role: event.target.value } : item
+                      ))
+                    })}
+                  />
+                  <label className="checkbox-row compact-check">
+                    <input
+                      type="checkbox"
+                      checked={person.is_active !== false}
+                      onChange={(event) => patchSummary({
+                        staff: summary.staff.map((item) => (
+                          item.id === person.id ? { ...item, is_active: event.target.checked } : item
+                        ))
+                      })}
+                    />
+                    Activo
+                  </label>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => saveStaff(person)}
+                    disabled={saving === person.id}
+                    aria-label="Guardar profesional"
                   >
                     <Save aria-hidden="true" />
                   </button>
@@ -516,7 +587,7 @@ export function AdminPage() {
                         <span>{appointment.services.map((service) => service.name).join(', ')}</span>
                         <small>{formatPrice(appointment.totalPrice)} - {appointment.status}</small>
                         {appointment.depositRequired && (
-                          <small>Sena: {formatPrice(appointment.depositAmount)} ({appointment.depositStatus})</small>
+                          <small>Seña: {formatPrice(appointment.depositAmount)} ({appointment.depositStatus})</small>
                         )}
                       </div>
                       <div className="status-actions">

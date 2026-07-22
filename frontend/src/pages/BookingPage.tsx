@@ -1,5 +1,6 @@
 import { CheckCircle2, Scissors, Sparkles } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
+import { BrandLogo } from '../components/BrandLogo';
 import { DateTimeSelector } from '../components/DateTimeSelector';
 import { createAppointment, fetchServices } from '../lib/api';
 import type { AvailabilitySlot, CreateAppointmentResponse, Service } from '../types';
@@ -76,10 +77,16 @@ export function BookingPage() {
     <main>
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Distrito Barber</p>
+          <div className="brand-lockup">
+            <BrandLogo />
+            <div>
+              <p className="eyebrow">JV Urban Style</p>
+              <span className="brand-subtitle">Barbería urbana desde 2007</span>
+            </div>
+          </div>
           <h1>Reservas urbanas, agenda prolija y estilo sin espera.</h1>
           <p>
-            Elegi el servicio, encontra un horario libre en tiempo real y deja tu turno listo
+            Elegí el servicio, encontrá un horario libre en tiempo real y dejá tu turno listo
             en menos de un minuto.
           </p>
           <a className="primary-cta" href="#booking">
@@ -99,7 +106,7 @@ export function BookingPage() {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Paso 1</p>
-              <h2 id="services-title">Selecciona servicios</h2>
+              <h2 id="services-title">Seleccioná servicios</h2>
             </div>
             <Scissors aria-hidden="true" />
           </div>
@@ -139,15 +146,15 @@ export function BookingPage() {
 
         <aside className="summary-panel" aria-label="Resumen de reserva">
           <p className="eyebrow">Paso 3</p>
-          <h2>Confirmacion</h2>
+          <h2>Confirmación</h2>
 
           {confirmation ? (
             <div className="summary-box">
-              <span>Codigo {confirmation.publicCode}</span>
+              <span>Código {confirmation.publicCode}</span>
               <strong>{confirmation.staffName}</strong>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
               {confirmation.depositRequired && (
-                <p>Sena sugerida: {formatPrice(confirmation.depositAmount)}</p>
+                <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
             </div>
           ) : (

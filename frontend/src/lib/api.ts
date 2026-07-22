@@ -99,6 +99,17 @@ export async function updateAdminService(pin: string, serviceId: string, payload
   });
 }
 
+export async function updateAdminStaff(pin: string, staffId: string, payload: {
+  fullName?: string;
+  role?: string;
+  isActive?: boolean;
+}) {
+  return adminFetch(`/api/admin/staff/${staffId}`, pin, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function saveAdminBusinessHours(pin: string, payload: {
   staffId?: string | null;
   dayOfWeek: number;

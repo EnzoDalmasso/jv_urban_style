@@ -30,7 +30,7 @@ export async function getShopSettings() {
       return defaultSettings;
     }
 
-    throw new HttpError(502, 'No se pudo obtener la configuracion del negocio.', error);
+    throw new HttpError(502, 'No se pudo obtener la configuración del negocio.', error);
   }
 
   return data ?? defaultSettings;

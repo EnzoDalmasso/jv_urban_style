@@ -31,6 +31,12 @@ export const updateServiceSchema = z.object({
   isActive: z.boolean().optional()
 });
 
+export const updateStaffSchema = z.object({
+  fullName: z.string().trim().min(2).optional(),
+  role: z.string().trim().min(2).optional(),
+  isActive: z.boolean().optional()
+});
+
 export const saveBusinessHoursSchema = z.object({
   staffId: z.string().uuid().nullable().optional(),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
@@ -108,7 +114,7 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
       throw new HttpError(409, 'Falta ejecutar la migracion SQL del panel admin en Supabase.', error);
     }
 
-    throw new HttpError(502, 'No se pudo guardar la configuracion.', error);
+    throw new HttpError(502, 'No se pudo guardar la configuración.', error);
   }
 
   return data;
@@ -144,6 +150,39 @@ export async function updateService(id: string, input: z.infer<typeof updateServ
 
   if (error) {
     throw new HttpError(502, 'No se pudo guardar el servicio.', error);
+  }
+
+  return data;
+}
+
+export async function updateStaff(id: string, input: z.infer<typeof updateStaffSchema>) {
+  const staffId = z.string().uuid().parse(id);
+  const parsed = updateStaffSchema.parse(input);
+  const payload = removeUndefined({
+    full_name: parsed.fullName,
+    role: parsed.role,
+    is_active: parsed.isActive
+  });
+
+  if (!supabase) {
+    const person = demoStaff.find((item) => item.id === staffId);
+    if (!person) {
+      throw new HttpError(404, 'Profesional no encontrado.');
+    }
+
+    Object.assign(person, payload);
+    return person;
+  }
+
+  const { data, error } = await supabase
+    .from('staff')
+    .update(payload)
+    .eq('id', staffId)
+    .select('id, full_name, role, timezone, is_active')
+    .single();
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo guardar el profesional.', error);
   }
 
   return data;

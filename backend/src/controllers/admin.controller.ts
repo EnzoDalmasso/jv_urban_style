@@ -7,6 +7,7 @@ import {
   saveSpecialHours,
   updateAppointmentStatus,
   updateService,
+  updateStaff,
   updateSettings
 } from '../services/admin.service.js';
 
@@ -28,6 +29,12 @@ export async function patchService(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const service = await updateService(params.id, req.body);
   res.json({ service });
+}
+
+export async function patchStaff(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const staff = await updateStaff(params.id, req.body);
+  res.json({ staff });
 }
 
 export async function putBusinessHours(req: Request, res: Response) {

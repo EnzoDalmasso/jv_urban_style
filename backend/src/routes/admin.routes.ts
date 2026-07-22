@@ -3,6 +3,7 @@ import {
   getSummary,
   patchAppointmentStatus,
   patchService,
+  patchStaff,
   patchSettings,
   postSpecialHours,
   putBusinessHours,
@@ -17,6 +18,7 @@ adminRouter.use(requireAdmin);
 adminRouter.get('/summary', asyncHandler(getSummary));
 adminRouter.patch('/settings', asyncHandler(patchSettings));
 adminRouter.patch('/services/:id', asyncHandler(patchService));
+adminRouter.patch('/staff/:id', asyncHandler(patchStaff));
 adminRouter.put('/business-hours', asyncHandler(putBusinessHours));
 adminRouter.post('/special-hours', asyncHandler(postSpecialHours));
 adminRouter.delete('/special-hours/:id', asyncHandler(removeSpecialHours));

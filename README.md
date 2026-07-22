@@ -68,7 +68,7 @@ VITE_API_URL=http://localhost:4000
 
 La disponibilidad se calcula en servidor para evitar doble reserva. El SQL tambien incluye una restriccion de exclusion en PostgreSQL para bloquear solapamientos por profesional.
 
-El panel del dueno vive en `/admin` y requiere el PIN configurado en `ADMIN_PIN`.
+El panel del dueño vive en `/admin` y requiere el PIN configurado en `ADMIN_PIN`.
 
 ## Arranque local
 

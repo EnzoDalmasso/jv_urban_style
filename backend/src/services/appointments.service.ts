@@ -196,7 +196,7 @@ export async function cancelAppointment(publicCode: string) {
     : DateTime.fromISO(appointment.starts_at).minus({ minutes: 120 });
 
   if (DateTime.utc() >= cutoff.toUTC()) {
-    throw new HttpError(409, 'No se puede cancelar online dentro del plazo minimo. Contacta al local para resolver la sena.', {
+    throw new HttpError(409, 'No se puede cancelar online dentro del plazo mínimo. Contactá al local para resolver la seña.', {
       depositRequired: appointment.deposit_required,
       depositAmount: appointment.deposit_amount
     });

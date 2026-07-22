@@ -109,6 +109,105 @@ h2 {
   text-decoration: none;
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.brand-subtitle {
+  color: #c9c4bb;
+  font-weight: 750;
+}
+
+.brand-logo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(246, 241, 231, 0.42);
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+    #08090d;
+  box-shadow: inset 0 0 0 6px #08090d, inset 0 0 0 7px rgba(215, 178, 93, 0.36);
+  text-align: center;
+}
+
+.brand-logo::before,
+.brand-logo::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  height: 1px;
+  background: rgba(215, 178, 93, 0.58);
+}
+
+.brand-logo::before {
+  top: 28px;
+}
+
+.brand-logo::after {
+  bottom: 28px;
+}
+
+.brand-logo strong {
+  color: #f6f1e7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.brand-logo span:not(.brand-crown) {
+  position: absolute;
+  bottom: 24px;
+  width: 100%;
+  color: #f6f1e7;
+  font-size: 0.54rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.brand-logo small {
+  position: absolute;
+  bottom: 13px;
+  width: 100%;
+  color: #d7b25d;
+  font-size: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.brand-crown {
+  position: absolute;
+  top: 9px;
+  color: #d7b25d;
+  font-size: 0.9rem;
+}
+
+.brand-logo.compact {
+  width: 72px;
+  height: 72px;
+}
+
+.brand-logo.compact strong {
+  font-size: 1.65rem;
+}
+
+.brand-logo.compact span:not(.brand-crown) {
+  bottom: 18px;
+  font-size: 0.42rem;
+}
+
+.brand-logo.compact small {
+  bottom: 9px;
+  font-size: 0.39rem;
+}
+
 .hero-metric {
   display: grid;
   gap: 8px;
@@ -442,6 +541,12 @@ select option {
   font-size: 2.4rem;
 }
 
+.admin-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .admin-toolbar {
   flex-wrap: wrap;
   gap: 12px;
@@ -512,7 +617,8 @@ select option {
 }
 
 .editable-row,
-.hours-row {
+.hours-row,
+.staff-row {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
@@ -684,6 +790,11 @@ select option {
 
   .editable-row {
     grid-template-columns: 1.4fr 120px 140px 100px 46px;
+    align-items: end;
+  }
+
+  .staff-row {
+    grid-template-columns: 1.4fr 1fr 100px 46px;
     align-items: end;
   }
 

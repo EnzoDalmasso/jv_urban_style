@@ -57,9 +57,9 @@ supabase/migrations/20260722_admin_panel.sql
 
 Esto agrega:
 
-- Configuracion de sena y plazo minimo de cancelacion.
+- Configuración de seña y plazo mínimo de cancelación.
 - Horarios especiales por fecha.
-- Campos de sena en turnos.
+- Campos de seña en turnos.
 - Soporte para historial diario por profesional.
 
 ## 3. Vercel
@@ -80,7 +80,7 @@ VITE_API_URL=https://TU-BACKEND.onrender.com
 
 Despues de guardar la variable, hacer redeploy del frontend.
 
-El panel del dueno queda en:
+El panel del dueño queda en:
 
 ```txt
 https://TU-FRONTEND.vercel.app/admin

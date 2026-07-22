@@ -36,12 +36,14 @@ export const demoServices = [
 export const demoStaff = [
   {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    full_name: 'Nico Vega',
+    full_name: 'Joel',
+    role: 'barber',
     timezone: 'America/Argentina/Buenos_Aires'
   },
   {
     id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-    full_name: 'Lara Cruz',
+    full_name: 'Gino',
+    role: 'barber',
     timezone: 'America/Argentina/Buenos_Aires'
   }
 ];
