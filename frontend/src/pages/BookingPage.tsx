@@ -59,6 +59,17 @@ export function BookingPage() {
     ));
   }
 
+  function scrollToBooking() {
+    document.getElementById('booking')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -107,10 +118,10 @@ export function BookingPage() {
             Elegí el servicio, encontrá un horario libre en tiempo real y dejá tu turno listo
             en menos de un minuto.
           </p>
-          <a className="primary-cta" href="#booking">
+          <button className="primary-cta" type="button" onClick={scrollToBooking}>
             <Scissors aria-hidden="true" />
             Reservar turno
-          </a>
+          </button>
         </div>
       </section>
 

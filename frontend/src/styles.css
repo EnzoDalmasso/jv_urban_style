@@ -105,6 +105,7 @@ h2 {
   border-radius: 8px;
   background: #d7b25d;
   color: #11100d;
+  cursor: pointer;
   font-weight: 800;
   text-decoration: none;
 }
