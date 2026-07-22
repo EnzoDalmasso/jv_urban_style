@@ -15,7 +15,6 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import {
-  clearAdminAppointments,
   createAdminService,
   createAdminStaff,
   deleteAdminService,
@@ -35,6 +34,7 @@ import type { AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'history';
+type SpecialMode = 'hours' | 'closed' | 'vacation';
 
 const defaultOpenPanels: Record<AdminPanelId, boolean> = {
   payments: false,
@@ -51,6 +51,41 @@ function todayISO() {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function parseISODate(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatISODate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildDateRange(startDate: string, endDate: string) {
+  const start = parseISODate(startDate);
+  const end = parseISODate(endDate || startDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new Error('Fecha invalida.');
+  }
+
+  if (end < start) {
+    throw new Error('La fecha hasta no puede ser anterior a la fecha desde.');
+  }
+
+  const dates: string[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    dates.push(formatISODate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return dates;
 }
 
 function shortTime(value: string) {
@@ -123,6 +158,7 @@ export function AdminPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [openPanels, setOpenPanels] = useState(defaultOpenPanels);
   const [openStaffHistory, setOpenStaffHistory] = useState<Record<string, boolean>>({});
+  const [specialMode, setSpecialMode] = useState<SpecialMode>('hours');
 
   useEffect(() => {
     if (!pin) {
@@ -283,16 +319,31 @@ export function AdminPage() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     await runAdminAction('special', async () => {
-      await saveAdminSpecialHours(pin, {
-        date: String(formData.get('date')),
+      const startDate = String(formData.get('date'));
+      const endDate = specialMode === 'vacation'
+        ? String(formData.get('endDate') || startDate)
+        : startDate;
+      const isClosed = specialMode !== 'hours';
+      const dates = buildDateRange(startDate, endDate);
+      const reason = String(formData.get('reason') ?? '').trim()
+        || (specialMode === 'vacation' ? 'Vacaciones' : specialMode === 'closed' ? 'Feriado' : 'Horario especial');
+
+      await Promise.all(dates.map((specialDate) => saveAdminSpecialHours(pin, {
+        date: specialDate,
         staffId: String(formData.get('staffId') || '') || null,
-        opensAt: String(formData.get('opensAt')),
-        closesAt: String(formData.get('closesAt')),
-        isClosed: formData.get('isClosed') === 'on',
-        reason: String(formData.get('reason') ?? '')
-      });
+        opensAt: specialMode === 'hours' ? String(formData.get('opensAt')) : '10:00',
+        closesAt: specialMode === 'hours' ? String(formData.get('closesAt')) : '19:00',
+        isClosed,
+        reason
+      })));
+
       event.currentTarget.reset();
-      await reload();
+      setSpecialMode('hours');
+      if (startDate !== date) {
+        setDate(startDate);
+      } else {
+        await reload();
+      }
     });
   }
 
@@ -327,21 +378,6 @@ export function AdminPage() {
         whatsappWindow.close();
       }
     }
-  }
-
-  async function clearDayHistory() {
-    const confirmed = window.confirm(
-      `Esto borra todos los turnos del ${date} y libera esos horarios. ¿Querés limpiar el historial de pruebas?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    await runAdminAction('clear-history', async () => {
-      await clearAdminAppointments(pin, date);
-      await reload();
-    });
   }
 
   async function runAdminAction(actionId: string, action: () => Promise<void>) {
@@ -806,7 +842,7 @@ export function AdminPage() {
               >
                 <div>
                   <p className="eyebrow">Feriados</p>
-                  <h2>Horario especial</h2>
+                  <h2>Especiales y vacaciones</h2>
                 </div>
                 {openPanels.specialHours ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
               </button>
@@ -817,9 +853,28 @@ export function AdminPage() {
               <>
             <form className="stack-form" onSubmit={addSpecialHours}>
               <label>
-                Fecha
+                Tipo
+                <select
+                  value={specialMode}
+                  onChange={(event) => setSpecialMode(event.target.value as SpecialMode)}
+                >
+                  <option value="hours">Horario especial</option>
+                  <option value="closed">Cerrado por feriado</option>
+                  <option value="vacation">Cerrado por vacaciones</option>
+                </select>
+              </label>
+              <div className="inline-fields">
+              <label>
+                Desde
                 <input name="date" type="date" defaultValue={date} required />
               </label>
+              {specialMode === 'vacation' && (
+                <label>
+                  Hasta
+                  <input name="endDate" type="date" defaultValue={date} required />
+                </label>
+              )}
+              </div>
               <label>
                 Profesional
                 <select name="staffId" defaultValue="">
@@ -829,7 +884,8 @@ export function AdminPage() {
                   ))}
                 </select>
               </label>
-              <div className="inline-fields">
+              {specialMode === 'hours' && (
+                <div className="inline-fields">
                 <label>
                   Desde
                   <input name="opensAt" type="time" defaultValue="10:00" required />
@@ -839,17 +895,17 @@ export function AdminPage() {
                   <input name="closesAt" type="time" defaultValue="19:00" required />
                 </label>
               </div>
+              )}
               <label>
                 Motivo
-                <input name="reason" placeholder="Feriado, evento, refuerzo" />
-              </label>
-              <label className="checkbox-row">
-                <input name="isClosed" type="checkbox" />
-                Cerrado todo el dia
+                <input
+                  name="reason"
+                  placeholder={specialMode === 'vacation' ? 'Vacaciones' : 'Feriado, evento, refuerzo'}
+                />
               </label>
               <button className="secondary-button" type="submit" disabled={saving === 'special'}>
                 <Check aria-hidden="true" />
-                Guardar especial
+                {specialMode === 'vacation' ? 'Guardar vacaciones' : specialMode === 'closed' ? 'Guardar cierre' : 'Guardar especial'}
               </button>
             </form>
 
@@ -887,15 +943,7 @@ export function AdminPage() {
                 </div>
                 {openPanels.history ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
               </button>
-              <button
-                className="icon-text-button danger compact-action"
-                type="button"
-                onClick={clearDayHistory}
-                disabled={saving === 'clear-history' || summary.appointments.length === 0}
-              >
-                <Trash2 aria-hidden="true" />
-                Limpiar
-              </button>
+              <CalendarClock aria-hidden="true" />
             </div>
 
             {openPanels.history && (

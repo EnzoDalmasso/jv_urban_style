@@ -195,12 +195,6 @@ export async function updateAdminAppointmentDepositStatus(pin: string, id: strin
   });
 }
 
-export async function clearAdminAppointments(pin: string, date: string) {
-  return adminFetch<{ deleted: number }>(`/api/admin/appointments?date=${date}`, pin, {
-    method: 'DELETE'
-  });
-}
-
 async function adminFetch<T = unknown>(path: string, pin: string, init?: RequestInit) {
   let response: Response;
 

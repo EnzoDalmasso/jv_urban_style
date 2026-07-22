@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
-  clearAppointmentsForAdmin,
   createService,
   createStaff,
   deactivateService,
@@ -24,15 +23,6 @@ export async function getSummary(req: Request, res: Response) {
 
   const summary = await getAdminSummary(query.date);
   res.json(summary);
-}
-
-export async function clearAppointments(req: Request, res: Response) {
-  const query = z.object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-  }).parse(req.query);
-
-  const result = await clearAppointmentsForAdmin(query.date);
-  res.json(result);
 }
 
 export async function patchSettings(req: Request, res: Response) {
