@@ -165,7 +165,8 @@ export async function createAppointment(rawInput: unknown) {
       depositAmount: Number(appointment.deposit_amount),
       depositStatus: appointment.deposit_status,
       cancellationCutoffAt,
-      transfer
+      transfer,
+      businessWhatsappPhone: settings.whatsapp_phone || ''
     }
   };
 }
@@ -228,7 +229,8 @@ function buildDemoAppointmentResponse(input: CreateAppointmentInput, slot: { sta
       depositAmount: input.serviceIds.length * 4750,
       depositStatus: 'pending',
       cancellationCutoffAt: DateTime.fromISO(slot.startsAt).minus({ minutes: 120 }).toUTC().toISO(),
-      transfer: buildTransferDetails(defaultSettings)
+      transfer: buildTransferDetails(defaultSettings),
+      businessWhatsappPhone: defaultSettings.whatsapp_phone
     }
   };
 }

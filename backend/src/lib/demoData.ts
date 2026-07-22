@@ -54,7 +54,8 @@ export const demoSettings = {
   require_deposit_for_late_cancellation: true,
   transfer_holder: 'JV Urban Style Barberia',
   transfer_alias: 'JVURBANSTYLE',
-  transfer_cbu: 'Configurar en admin'
+  transfer_cbu: 'Configurar en admin',
+  whatsapp_phone: ''
 };
 
 export const demoBusinessHours: Array<{

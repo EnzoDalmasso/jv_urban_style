@@ -822,6 +822,7 @@ select option {
 }
 
 .status-actions button,
+.status-link,
 .secondary-button,
 .icon-text-button,
 .icon-button {
@@ -830,10 +831,23 @@ select option {
   background: rgba(255, 255, 255, 0.05);
   color: #f6f1e7;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.status-actions button {
+.status-actions button,
+.status-link {
   min-height: 38px;
+}
+
+.status-link {
+  display: inline-grid;
+  place-items: center;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.proof-link {
+  margin-top: 2px;
 }
 
 .secondary-button,
@@ -902,7 +916,7 @@ select option {
   }
 
   .editable-row {
-    grid-template-columns: 1.4fr 120px 140px 100px 46px;
+    grid-template-columns: 1.4fr 120px 140px 100px 46px 46px;
     align-items: end;
   }
 

@@ -40,6 +40,7 @@ export type ShopSettings = {
   transfer_holder: string;
   transfer_alias: string;
   transfer_cbu: string;
+  whatsapp_phone: string;
 };
 
 export type BusinessHours = {
@@ -104,6 +105,7 @@ export type CreateAppointmentResponse = {
     depositAmount: number;
     depositStatus: string;
     cancellationCutoffAt: string | null;
+    businessWhatsappPhone?: string;
     transfer: {
       holder: string;
       alias: string;

@@ -9,6 +9,7 @@ export type ShopSettings = {
   transfer_holder: string;
   transfer_alias: string;
   transfer_cbu: string;
+  whatsapp_phone: string;
 };
 
 export const defaultSettings: ShopSettings = {
@@ -17,10 +18,21 @@ export const defaultSettings: ShopSettings = {
   require_deposit_for_late_cancellation: true,
   transfer_holder: 'JV Urban Style Barberia',
   transfer_alias: 'JVURBANSTYLE',
-  transfer_cbu: 'Configurar en admin'
+  transfer_cbu: 'Configurar en admin',
+  whatsapp_phone: ''
 };
 
 const settingsSelect = `
+  cancellation_notice_minutes,
+  deposit_percentage,
+  require_deposit_for_late_cancellation,
+  transfer_holder,
+  transfer_alias,
+  transfer_cbu,
+  whatsapp_phone
+`;
+
+const transferSettingsSelect = `
   cancellation_notice_minutes,
   deposit_percentage,
   require_deposit_for_late_cancellation,
@@ -45,6 +57,28 @@ export async function getShopSettings() {
     .select(settingsSelect)
     .eq('id', true)
     .maybeSingle<ShopSettings>();
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return getTransferShopSettings();
+    }
+
+    throw new HttpError(502, 'No se pudo obtener la configuracion del negocio.', error);
+  }
+
+  return mergeSettings(data);
+}
+
+async function getTransferShopSettings() {
+  if (!supabase) {
+    return defaultSettings;
+  }
+
+  const { data, error } = await supabase
+    .from('shop_settings')
+    .select(transferSettingsSelect)
+    .eq('id', true)
+    .maybeSingle<Omit<ShopSettings, 'whatsapp_phone'>>();
 
   if (error) {
     if (isMissingSchemaError(error)) {
@@ -85,6 +119,7 @@ export function mergeSettings(settings?: Partial<ShopSettings> | null): ShopSett
     ...(settings ?? {}),
     transfer_holder: settings?.transfer_holder || defaultSettings.transfer_holder,
     transfer_alias: settings?.transfer_alias || defaultSettings.transfer_alias,
-    transfer_cbu: settings?.transfer_cbu || defaultSettings.transfer_cbu
+    transfer_cbu: settings?.transfer_cbu || defaultSettings.transfer_cbu,
+    whatsapp_phone: settings?.whatsapp_phone || defaultSettings.whatsapp_phone
   };
 }

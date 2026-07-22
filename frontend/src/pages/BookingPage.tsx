@@ -13,6 +13,16 @@ function formatPrice(price: number) {
   }).format(Number(price));
 }
 
+function buildWhatsappUrl(phone: string | undefined, message: string) {
+  const normalizedPhone = (phone ?? '').replace(/\D/g, '');
+
+  if (!normalizedPhone) {
+    return null;
+  }
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
 export function BookingPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -26,6 +36,12 @@ export function BookingPage() {
     alias: 'JVURBANSTYLE',
     cbu: 'Configurar en admin'
   };
+  const proofWhatsappUrl = confirmation
+    ? buildWhatsappUrl(
+        confirmation.businessWhatsappPhone,
+        `Hola JV Urban Style, ya reservé mi turno. Código: ${confirmation.publicCode}. Envío el comprobante de la seña.`
+      )
+    : null;
 
   useEffect(() => {
     fetchServices()
@@ -169,6 +185,13 @@ export function BookingPage() {
                     <dd>{transferDetails.cbu}</dd>
                   </div>
                 </dl>
+                {proofWhatsappUrl ? (
+                  <a className="secondary-button proof-link" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
+                    Enviar comprobante por WhatsApp
+                  </a>
+                ) : (
+                  <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
+                )}
               </div>
             </div>
           ) : (

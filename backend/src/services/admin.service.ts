@@ -24,7 +24,8 @@ export const updateSettingsSchema = z.object({
   requireDepositForLateCancellation: z.boolean().optional(),
   transferHolder: z.string().trim().max(120).optional(),
   transferAlias: z.string().trim().max(80).optional(),
-  transferCbu: z.string().trim().max(80).optional()
+  transferCbu: z.string().trim().max(80).optional(),
+  whatsappPhone: z.string().trim().max(40).optional()
 });
 
 export const updateServiceSchema = z.object({
@@ -33,6 +34,13 @@ export const updateServiceSchema = z.object({
   durationMinutes: z.coerce.number().int().positive().optional(),
   price: z.coerce.number().min(0).optional(),
   isActive: z.boolean().optional()
+});
+
+export const createServiceSchema = z.object({
+  name: z.string().trim().min(2),
+  description: z.string().trim().optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().default(45),
+  price: z.coerce.number().min(0).default(0)
 });
 
 export const updateStaffSchema = z.object({
@@ -65,6 +73,10 @@ export const saveSpecialHoursSchema = z.object({
 
 export const updateAppointmentStatusSchema = z.object({
   status: z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no_show'])
+});
+
+export const updateAppointmentDepositSchema = z.object({
+  depositStatus: z.enum(['pending', 'paid', 'waived'])
 });
 
 export async function getAdminSummary(date: string) {
@@ -103,7 +115,8 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
       parsed.requireDepositForLateCancellation ?? demoSettings.require_deposit_for_late_cancellation,
     transfer_holder: parsed.transferHolder ?? demoSettings.transfer_holder,
     transfer_alias: parsed.transferAlias ?? demoSettings.transfer_alias,
-    transfer_cbu: parsed.transferCbu ?? demoSettings.transfer_cbu
+    transfer_cbu: parsed.transferCbu ?? demoSettings.transfer_cbu,
+    whatsapp_phone: parsed.whatsappPhone ?? demoSettings.whatsapp_phone
   });
 
   if (!supabase) {
@@ -119,7 +132,8 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
       require_deposit_for_late_cancellation: parsed.requireDepositForLateCancellation,
       transfer_holder: parsed.transferHolder,
       transfer_alias: parsed.transferAlias,
-      transfer_cbu: parsed.transferCbu
+      transfer_cbu: parsed.transferCbu,
+      whatsapp_phone: parsed.whatsappPhone
     }), { onConflict: 'id' })
     .select(`
       cancellation_notice_minutes,
@@ -127,7 +141,8 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
       require_deposit_for_late_cancellation,
       transfer_holder,
       transfer_alias,
-      transfer_cbu
+      transfer_cbu,
+      whatsapp_phone
     `)
     .single();
 
@@ -172,6 +187,70 @@ export async function updateService(id: string, input: z.infer<typeof updateServ
 
   if (error) {
     throw new HttpError(502, 'No se pudo guardar el servicio.', error);
+  }
+
+  return data;
+}
+
+export async function createService(input: z.infer<typeof createServiceSchema>) {
+  const parsed = createServiceSchema.parse(input);
+
+  if (!supabase) {
+    const next = {
+      id: randomUUID(),
+      name: parsed.name,
+      description: parsed.description ?? '',
+      duration_minutes: parsed.durationMinutes,
+      price: parsed.price,
+      sort_order: demoServices.length + 1,
+      is_active: true
+    };
+    demoServices.push(next);
+    return next;
+  }
+
+  const nextSortOrder = await getNextServiceSortOrder();
+  const { data: service, error } = await supabase
+    .from('services')
+    .insert({
+      name: parsed.name,
+      description: parsed.description ?? null,
+      duration_minutes: parsed.durationMinutes,
+      price: parsed.price,
+      sort_order: nextSortOrder,
+      is_active: true
+    })
+    .select('id, name, description, duration_minutes, price, sort_order, is_active')
+    .single();
+
+  if (error || !service) {
+    throw new HttpError(502, 'No se pudo agregar el servicio.', error);
+  }
+
+  await attachServiceToAllActiveStaff(service.id);
+  return service;
+}
+
+export async function deactivateService(id: string) {
+  const serviceId = z.string().uuid().parse(id);
+
+  if (!supabase) {
+    const service = demoServices.find((item) => item.id === serviceId);
+    if (service) {
+      Object.assign(service, { is_active: false });
+    }
+    return { id: serviceId, is_active: false };
+  }
+
+  const { data, error } = await supabase
+    .from('services')
+    .update({ is_active: false })
+    .eq('id', serviceId)
+    .select('id, name, description, duration_minutes, price, sort_order, is_active')
+    .single();
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo quitar el servicio.', error);
   }
 
   return data;
@@ -397,6 +476,31 @@ export async function updateAppointmentStatus(id: string, input: z.infer<typeof 
   return data;
 }
 
+export async function updateAppointmentDeposit(id: string, input: z.infer<typeof updateAppointmentDepositSchema>) {
+  const safeId = z.string().uuid().parse(id);
+  const parsed = updateAppointmentDepositSchema.parse(input);
+
+  if (!supabase) {
+    return { id: safeId, deposit_status: parsed.depositStatus };
+  }
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({
+      deposit_status: parsed.depositStatus,
+      deposit_required: parsed.depositStatus !== 'waived'
+    })
+    .eq('id', safeId)
+    .select('id, deposit_status, deposit_required')
+    .single();
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo actualizar la seña.', error);
+  }
+
+  return data;
+}
+
 async function getServicesForAdmin() {
   if (!supabase) {
     return demoServices;
@@ -405,6 +509,7 @@ async function getServicesForAdmin() {
   const { data, error } = await supabase
     .from('services')
     .select('id, name, description, duration_minutes, price, sort_order, is_active')
+    .eq('is_active', true)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
@@ -617,6 +722,57 @@ async function attachAllActiveServices(staffId: string) {
   if (error) {
     throw new HttpError(502, 'No se pudieron asociar servicios al profesional.', error);
   }
+}
+
+async function attachServiceToAllActiveStaff(serviceId: string) {
+  if (!supabase) {
+    return;
+  }
+
+  const { data: staff, error: staffError } = await supabase
+    .from('staff')
+    .select('id')
+    .eq('is_active', true);
+
+  if (staffError) {
+    throw new HttpError(502, 'No se pudieron asociar profesionales al servicio.', staffError);
+  }
+
+  const rows = (staff ?? []).map((person) => ({
+    staff_id: person.id,
+    service_id: serviceId
+  }));
+
+  if (rows.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('staff_services')
+    .upsert(rows, { onConflict: 'staff_id,service_id' });
+
+  if (error) {
+    throw new HttpError(502, 'No se pudieron asociar profesionales al servicio.', error);
+  }
+}
+
+async function getNextServiceSortOrder() {
+  if (!supabase) {
+    return demoServices.length + 1;
+  }
+
+  const { data, error } = await supabase
+    .from('services')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ sort_order: number }>();
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo calcular el orden del servicio.', error);
+  }
+
+  return Number(data?.sort_order ?? 0) + 1;
 }
 
 function dedupeStaffRows(staff: Array<{ id: string; full_name: string; role?: string; timezone: string; is_active?: boolean }>) {

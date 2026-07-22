@@ -13,12 +13,15 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import {
+  createAdminService,
   createAdminStaff,
+  deleteAdminService,
   deleteAdminStaff,
   deleteAdminSpecialHours,
   fetchAdminSummary,
   saveAdminBusinessHours,
   saveAdminSpecialHours,
+  updateAdminAppointmentDepositStatus,
   updateAdminAppointmentStatus,
   updateAdminService,
   updateAdminStaff,
@@ -46,6 +49,34 @@ function formatPrice(price: number) {
     currency: 'ARS',
     maximumFractionDigits: 0
   }).format(Number(price));
+}
+
+function buildWhatsappUrl(phone: string | undefined, message: string) {
+  const normalizedPhone = (phone ?? '').replace(/\D/g, '');
+
+  if (!normalizedPhone) {
+    return null;
+  }
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
+function formatAppointmentTime(startsAt: string) {
+  return new Date(startsAt).toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function depositLabel(status: string) {
+  const labels: Record<string, string> = {
+    not_required: 'no requerida',
+    pending: 'pendiente',
+    paid: 'recibida',
+    waived: 'sin seña'
+  };
+
+  return labels[status] ?? status;
 }
 
 export function AdminPage() {
@@ -116,7 +147,20 @@ export function AdminPage() {
         requireDepositForLateCancellation: settings.require_deposit_for_late_cancellation,
         transferHolder: settings.transfer_holder ?? '',
         transferAlias: settings.transfer_alias ?? '',
-        transferCbu: settings.transfer_cbu ?? ''
+        transferCbu: settings.transfer_cbu ?? '',
+        whatsappPhone: settings.whatsapp_phone ?? ''
+      });
+      await reload();
+    });
+  }
+
+  async function addService() {
+    await runAdminAction('new-service', async () => {
+      await createAdminService(pin, {
+        name: 'Nuevo servicio',
+        description: 'Editar descripcion',
+        durationMinutes: 45,
+        price: 0
       });
       await reload();
     });
@@ -131,6 +175,13 @@ export function AdminPage() {
         price: Number(service.price),
         isActive: Boolean(service.is_active ?? true)
       });
+      await reload();
+    });
+  }
+
+  async function removeService(service: Service) {
+    await runAdminAction(service.id, async () => {
+      await deleteAdminService(pin, service.id);
       await reload();
     });
   }
@@ -203,6 +254,13 @@ export function AdminPage() {
   async function changeAppointmentStatus(id: string, status: string) {
     await runAdminAction(id, async () => {
       await updateAdminAppointmentStatus(pin, id, status);
+      await reload();
+    });
+  }
+
+  async function changeDepositStatus(id: string, depositStatus: string) {
+    await runAdminAction(`deposit-${id}`, async () => {
+      await updateAdminAppointmentDepositStatus(pin, id, depositStatus);
       await reload();
     });
   }
@@ -384,6 +442,19 @@ export function AdminPage() {
                   })}
                 />
               </label>
+              <label>
+                WhatsApp del local
+                <input
+                  value={summary.settings.whatsapp_phone ?? ''}
+                  placeholder="Ej: 5493510000000"
+                  onChange={(event) => patchSummary({
+                    settings: {
+                      ...summary.settings,
+                      whatsapp_phone: event.target.value
+                    }
+                  })}
+                />
+              </label>
             </div>
 
             <button
@@ -403,7 +474,15 @@ export function AdminPage() {
                 <p className="eyebrow">Servicios</p>
                 <h2>Precios y duración</h2>
               </div>
-              <Scissors aria-hidden="true" />
+              <button
+                className="icon-button"
+                type="button"
+                onClick={addService}
+                disabled={saving === 'new-service'}
+                aria-label="Agregar servicio"
+              >
+                <Plus aria-hidden="true" />
+              </button>
             </div>
 
             <div className="editable-list">
@@ -457,6 +536,15 @@ export function AdminPage() {
                     aria-label="Guardar servicio"
                   >
                     <Save aria-hidden="true" />
+                  </button>
+                  <button
+                    className="icon-button danger"
+                    type="button"
+                    onClick={() => removeService(service)}
+                    disabled={saving === service.id}
+                    aria-label="Quitar servicio"
+                  >
+                    <Minus aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -681,25 +769,57 @@ export function AdminPage() {
                     </article>
                   )}
 
-                  {appointments.map((appointment) => (
+                  {appointments.map((appointment) => {
+                    const appointmentDate = new Date(appointment.startsAt).toLocaleDateString('es-AR');
+                    const appointmentTime = formatAppointmentTime(appointment.startsAt);
+                    const servicesText = appointment.services.map((service) => service.name).join(', ');
+                    const pendingProofUrl = buildWhatsappUrl(
+                      appointment.clientPhone,
+                      `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña. Código: ${appointment.publicCode}.`
+                    );
+                    const acceptedUrl = buildWhatsappUrl(
+                      appointment.clientPhone,
+                      `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style. Código: ${appointment.publicCode}.`
+                    );
+
+                    return (
                     <article className="appointment-card" key={appointment.id}>
                       <div>
-                        <strong>{new Date(appointment.startsAt).toLocaleDateString('es-AR')}</strong>
-                        <span>{new Date(appointment.startsAt).toLocaleTimeString('es-AR', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}</span>
+                        <strong>{appointmentDate}</strong>
+                        <span>{appointmentTime}</span>
                         <span>{appointment.clientName}</span>
                         <small>{appointment.clientPhone}</small>
                       </div>
                       <div>
-                        <span>Corte: {appointment.services.map((service) => service.name).join(', ')}</span>
+                        <span>Corte: {servicesText}</span>
                         <small>{formatPrice(appointment.totalPrice)} - {appointment.status}</small>
                         {appointment.depositRequired && (
-                          <small>Seña: {formatPrice(appointment.depositAmount)} ({appointment.depositStatus})</small>
+                          <small>Seña: {formatPrice(appointment.depositAmount)} ({depositLabel(appointment.depositStatus)})</small>
                         )}
                       </div>
                       <div className="status-actions">
+                        {appointment.depositRequired && (
+                          <button
+                            type="button"
+                            disabled={saving === `deposit-${appointment.id}`}
+                            onClick={() => changeDepositStatus(
+                              appointment.id,
+                              appointment.depositStatus === 'paid' ? 'pending' : 'paid'
+                            )}
+                          >
+                            {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
+                          </button>
+                        )}
+                        {pendingProofUrl && appointment.depositStatus !== 'paid' && (
+                          <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
+                            Pedir comprobante
+                          </a>
+                        )}
+                        {acceptedUrl && appointment.depositStatus === 'paid' && (
+                          <a className="status-link" href={acceptedUrl} target="_blank" rel="noreferrer">
+                            Avisar confirmado
+                          </a>
+                        )}
                         <button
                           type="button"
                           disabled={saving === appointment.id}
@@ -723,7 +843,8 @@ export function AdminPage() {
                         </button>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

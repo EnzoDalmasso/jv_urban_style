@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
+  createService,
   createStaff,
+  deactivateService,
   deactivateStaff,
   deleteSpecialHours,
   getAdminSummary,
   saveBusinessHours,
   saveSpecialHours,
+  updateAppointmentDeposit,
   updateAppointmentStatus,
   updateService,
   updateStaff,
@@ -30,6 +33,17 @@ export async function patchSettings(req: Request, res: Response) {
 export async function patchService(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const service = await updateService(params.id, req.body);
+  res.json({ service });
+}
+
+export async function postService(req: Request, res: Response) {
+  const service = await createService(req.body);
+  res.status(201).json({ service });
+}
+
+export async function removeService(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const service = await deactivateService(params.id);
   res.json({ service });
 }
 
@@ -69,5 +83,11 @@ export async function removeSpecialHours(req: Request, res: Response) {
 export async function patchAppointmentStatus(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const appointment = await updateAppointmentStatus(params.id, req.body);
+  res.json({ appointment });
+}
+
+export async function patchAppointmentDeposit(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const appointment = await updateAppointmentDeposit(params.id, req.body);
   res.json({ appointment });
 }

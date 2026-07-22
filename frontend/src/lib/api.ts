@@ -82,9 +82,22 @@ export async function updateAdminSettings(pin: string, payload: {
   transferHolder?: string;
   transferAlias?: string;
   transferCbu?: string;
+  whatsappPhone?: string;
 }) {
   return adminFetch('/api/admin/settings', pin, {
     method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createAdminService(pin: string, payload: {
+  name: string;
+  description?: string | null;
+  durationMinutes?: number;
+  price?: number;
+}) {
+  return adminFetch('/api/admin/services', pin, {
+    method: 'POST',
     body: JSON.stringify(payload)
   });
 }
@@ -99,6 +112,12 @@ export async function updateAdminService(pin: string, serviceId: string, payload
   return adminFetch(`/api/admin/services/${serviceId}`, pin, {
     method: 'PATCH',
     body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteAdminService(pin: string, serviceId: string) {
+  return adminFetch(`/api/admin/services/${serviceId}`, pin, {
+    method: 'DELETE'
   });
 }
 
@@ -166,6 +185,13 @@ export async function updateAdminAppointmentStatus(pin: string, id: string, stat
   return adminFetch(`/api/admin/appointments/${id}/status`, pin, {
     method: 'PATCH',
     body: JSON.stringify({ status })
+  });
+}
+
+export async function updateAdminAppointmentDepositStatus(pin: string, id: string, depositStatus: string) {
+  return adminFetch(`/api/admin/appointments/${id}/deposit`, pin, {
+    method: 'PATCH',
+    body: JSON.stringify({ depositStatus })
   });
 }
 

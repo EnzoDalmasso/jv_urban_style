@@ -60,6 +60,7 @@ create table if not exists public.shop_settings (
   transfer_holder text not null default 'JV Urban Style Barberia',
   transfer_alias text not null default 'JVURBANSTYLE',
   transfer_cbu text not null default 'Configurar en admin',
+  whatsapp_phone text not null default '',
   updated_at timestamptz not null default now(),
   constraint shop_settings_singleton check (id)
 );
