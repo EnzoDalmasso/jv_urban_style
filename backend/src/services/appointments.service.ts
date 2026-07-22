@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { env } from '../config/env.js';
 import { supabase } from '../lib/supabase.js';
 import { calculateAvailability, getActiveServicesByIds } from './availability.service.js';
-import { getShopSettings } from './settings.service.js';
+import { defaultSettings, getShopSettings } from './settings.service.js';
 import { HttpError } from '../utils/httpError.js';
 import { isMissingSchemaError } from '../utils/supabaseError.js';
 
@@ -71,6 +71,7 @@ export async function createAppointment(rawInput: unknown) {
     .minus({ minutes: Number(settings.cancellation_notice_minutes) })
     .toUTC()
     .toISO();
+  const transfer = buildTransferDetails(settings);
 
   const { data: client, error: clientError } = await supabase
     .from('clients')
@@ -163,7 +164,8 @@ export async function createAppointment(rawInput: unknown) {
       depositRequired: appointment.deposit_required,
       depositAmount: Number(appointment.deposit_amount),
       depositStatus: appointment.deposit_status,
-      cancellationCutoffAt
+      cancellationCutoffAt,
+      transfer
     }
   };
 }
@@ -225,8 +227,21 @@ function buildDemoAppointmentResponse(input: CreateAppointmentInput, slot: { sta
       depositRequired: true,
       depositAmount: input.serviceIds.length * 4750,
       depositStatus: 'pending',
-      cancellationCutoffAt: DateTime.fromISO(slot.startsAt).minus({ minutes: 120 }).toUTC().toISO()
+      cancellationCutoffAt: DateTime.fromISO(slot.startsAt).minus({ minutes: 120 }).toUTC().toISO(),
+      transfer: buildTransferDetails(defaultSettings)
     }
+  };
+}
+
+function buildTransferDetails(settings: {
+  transfer_holder?: string | null;
+  transfer_alias?: string | null;
+  transfer_cbu?: string | null;
+}) {
+  return {
+    holder: settings.transfer_holder || defaultSettings.transfer_holder,
+    alias: settings.transfer_alias || defaultSettings.transfer_alias,
+    cbu: settings.transfer_cbu || defaultSettings.transfer_cbu
   };
 }
 

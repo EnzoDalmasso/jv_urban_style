@@ -37,6 +37,9 @@ export type ShopSettings = {
   cancellation_notice_minutes: number;
   deposit_percentage: number;
   require_deposit_for_late_cancellation: boolean;
+  transfer_holder: string;
+  transfer_alias: string;
+  transfer_cbu: string;
 };
 
 export type BusinessHours = {
@@ -101,5 +104,10 @@ export type CreateAppointmentResponse = {
     depositAmount: number;
     depositStatus: string;
     cancellationCutoffAt: string | null;
+    transfer: {
+      holder: string;
+      alias: string;
+      cbu: string;
+    };
   };
 };

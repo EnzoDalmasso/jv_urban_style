@@ -21,7 +21,10 @@ const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const updateSettingsSchema = z.object({
   cancellationNoticeMinutes: z.coerce.number().int().min(0).optional(),
   depositPercentage: z.coerce.number().min(0).max(100).optional(),
-  requireDepositForLateCancellation: z.boolean().optional()
+  requireDepositForLateCancellation: z.boolean().optional(),
+  transferHolder: z.string().trim().max(120).optional(),
+  transferAlias: z.string().trim().max(80).optional(),
+  transferCbu: z.string().trim().max(80).optional()
 });
 
 export const updateServiceSchema = z.object({
@@ -97,7 +100,10 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
     cancellation_notice_minutes: parsed.cancellationNoticeMinutes ?? demoSettings.cancellation_notice_minutes,
     deposit_percentage: parsed.depositPercentage ?? demoSettings.deposit_percentage,
     require_deposit_for_late_cancellation:
-      parsed.requireDepositForLateCancellation ?? demoSettings.require_deposit_for_late_cancellation
+      parsed.requireDepositForLateCancellation ?? demoSettings.require_deposit_for_late_cancellation,
+    transfer_holder: parsed.transferHolder ?? demoSettings.transfer_holder,
+    transfer_alias: parsed.transferAlias ?? demoSettings.transfer_alias,
+    transfer_cbu: parsed.transferCbu ?? demoSettings.transfer_cbu
   });
 
   if (!supabase) {
@@ -106,13 +112,23 @@ export async function updateSettings(input: z.infer<typeof updateSettingsSchema>
 
   const { data, error } = await supabase
     .from('shop_settings')
-    .upsert({
+    .upsert(removeUndefined({
       id: true,
       cancellation_notice_minutes: parsed.cancellationNoticeMinutes,
       deposit_percentage: parsed.depositPercentage,
-      require_deposit_for_late_cancellation: parsed.requireDepositForLateCancellation
-    }, { onConflict: 'id' })
-    .select('cancellation_notice_minutes, deposit_percentage, require_deposit_for_late_cancellation')
+      require_deposit_for_late_cancellation: parsed.requireDepositForLateCancellation,
+      transfer_holder: parsed.transferHolder,
+      transfer_alias: parsed.transferAlias,
+      transfer_cbu: parsed.transferCbu
+    }), { onConflict: 'id' })
+    .select(`
+      cancellation_notice_minutes,
+      deposit_percentage,
+      require_deposit_for_late_cancellation,
+      transfer_holder,
+      transfer_alias,
+      transfer_cbu
+    `)
     .single();
 
   if (error) {

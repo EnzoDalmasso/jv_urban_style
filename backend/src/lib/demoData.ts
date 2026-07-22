@@ -51,7 +51,10 @@ export const demoStaff = [
 export const demoSettings = {
   cancellation_notice_minutes: 120,
   deposit_percentage: 50,
-  require_deposit_for_late_cancellation: true
+  require_deposit_for_late_cancellation: true,
+  transfer_holder: 'JV Urban Style Barberia',
+  transfer_alias: 'JVURBANSTYLE',
+  transfer_cbu: 'Configurar en admin'
 };
 
 export const demoBusinessHours: Array<{

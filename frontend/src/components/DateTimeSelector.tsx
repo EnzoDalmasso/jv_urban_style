@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, Loader2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAvailability } from '../lib/api';
 import type { AvailabilitySlot } from '../types';
@@ -6,8 +6,10 @@ import type { AvailabilitySlot } from '../types';
 type DateTimeSelectorProps = {
   serviceIds: string[];
   selectedSlot?: AvailabilitySlot;
-  onSelectSlot: (slot: AvailabilitySlot) => void;
+  onSelectSlot: (slot: AvailabilitySlot | undefined) => void;
 };
+
+const weekdayLabels = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
 
 function toISODate(date: Date) {
   const year = date.getFullYear();
@@ -16,19 +18,40 @@ function toISODate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function buildDateOptions() {
-  return Array.from({ length: 14 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index);
-    return toISODate(date);
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function buildCalendarDays(monthCursor: Date) {
+  const firstDay = startOfMonth(monthCursor);
+  const gridStart = new Date(firstDay);
+  gridStart.setDate(firstDay.getDate() - firstDay.getDay());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+
+    return {
+      date,
+      iso: toISODate(date),
+      day: date.getDate(),
+      inCurrentMonth: date.getMonth() === monthCursor.getMonth()
+    };
   });
 }
 
-function formatDayLabel(value: string) {
+function formatMonthLabel(date: Date) {
   return new Intl.DateTimeFormat('es-AR', {
-    weekday: 'short',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+}
+
+function formatSelectedDate(value: string) {
+  return new Intl.DateTimeFormat('es-AR', {
+    weekday: 'long',
     day: '2-digit',
-    month: 'short'
+    month: 'long'
   }).format(new Date(`${value}T12:00:00`));
 }
 
@@ -37,11 +60,17 @@ export function DateTimeSelector({
   selectedSlot,
   onSelectSlot
 }: DateTimeSelectorProps) {
-  const dates = useMemo(buildDateOptions, []);
-  const [selectedDate, setSelectedDate] = useState(dates[0]);
+  const today = useMemo(() => new Date(), []);
+  const todayISO = useMemo(() => toISODate(today), [today]);
+  const currentMonthISO = useMemo(() => toISODate(startOfMonth(today)), [today]);
+  const [selectedDate, setSelectedDate] = useState(todayISO);
+  const [monthCursor, setMonthCursor] = useState(() => startOfMonth(today));
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const calendarDays = useMemo(() => buildCalendarDays(monthCursor), [monthCursor]);
+  const canGoPrevious = toISODate(startOfMonth(monthCursor)) > currentMonthISO;
 
   useEffect(() => {
     if (serviceIds.length === 0) {
@@ -69,6 +98,20 @@ export function DateTimeSelector({
     return () => controller.abort();
   }, [selectedDate, serviceIds]);
 
+  function moveMonth(delta: number) {
+    setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
+  }
+
+  function selectDate(date: Date, iso: string) {
+    if (iso < todayISO) {
+      return;
+    }
+
+    setSelectedDate(iso);
+    setMonthCursor(startOfMonth(date));
+    onSelectSlot(undefined);
+  }
+
   return (
     <section className="booking-panel" aria-labelledby="booking-date-title">
       <div className="panel-heading">
@@ -79,18 +122,60 @@ export function DateTimeSelector({
         <CalendarDays aria-hidden="true" />
       </div>
 
-      <div className="date-rail" aria-label="Fechas disponibles">
-        {dates.map((date) => (
+      <div className="calendar-box" aria-label="Calendario de turnos">
+        <div className="calendar-header">
           <button
-            className={date === selectedDate ? 'date-chip active' : 'date-chip'}
-            key={date}
+            className="calendar-nav-button"
             type="button"
-            onClick={() => setSelectedDate(date)}
+            onClick={() => moveMonth(-1)}
+            disabled={!canGoPrevious}
+            aria-label="Mes anterior"
           >
-            {formatDayLabel(date)}
+            <ChevronLeft aria-hidden="true" />
           </button>
-        ))}
+          <strong>{formatMonthLabel(monthCursor)}</strong>
+          <button
+            className="calendar-nav-button"
+            type="button"
+            onClick={() => moveMonth(1)}
+            aria-label="Mes siguiente"
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="calendar-grid">
+          {weekdayLabels.map((label) => (
+            <span className="calendar-weekday" key={label}>{label}</span>
+          ))}
+
+          {calendarDays.map((day) => {
+            const isPast = day.iso < todayISO;
+            const isSelected = day.iso === selectedDate;
+            const className = [
+              'calendar-day',
+              day.inCurrentMonth ? '' : 'muted-month',
+              isSelected ? 'active' : ''
+            ].filter(Boolean).join(' ');
+
+            return (
+              <button
+                className={className}
+                key={day.iso}
+                type="button"
+                disabled={isPast}
+                aria-pressed={isSelected}
+                aria-label={formatSelectedDate(day.iso)}
+                onClick={() => selectDate(day.date, day.iso)}
+              >
+                {day.day}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      <p className="selected-date-label">{formatSelectedDate(selectedDate)}</p>
 
       <div className="slot-area">
         {serviceIds.length === 0 && (

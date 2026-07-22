@@ -79,6 +79,9 @@ export async function updateAdminSettings(pin: string, payload: {
   cancellationNoticeMinutes?: number;
   depositPercentage?: number;
   requireDepositForLateCancellation?: boolean;
+  transferHolder?: string;
+  transferAlias?: string;
+  transferCbu?: string;
 }) {
   return adminFetch('/api/admin/settings', pin, {
     method: 'PATCH',

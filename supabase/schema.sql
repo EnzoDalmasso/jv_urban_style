@@ -57,6 +57,9 @@ create table if not exists public.shop_settings (
   cancellation_notice_minutes integer not null default 120 check (cancellation_notice_minutes >= 0),
   deposit_percentage numeric(5,2) not null default 50 check (deposit_percentage >= 0 and deposit_percentage <= 100),
   require_deposit_for_late_cancellation boolean not null default true,
+  transfer_holder text not null default 'JV Urban Style Barberia',
+  transfer_alias text not null default 'JVURBANSTYLE',
+  transfer_cbu text not null default 'Configurar en admin',
   updated_at timestamptz not null default now(),
   constraint shop_settings_singleton check (id)
 );

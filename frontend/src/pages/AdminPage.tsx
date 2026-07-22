@@ -113,7 +113,10 @@ export function AdminPage() {
       await updateAdminSettings(pin, {
         cancellationNoticeMinutes: Number(settings.cancellation_notice_minutes),
         depositPercentage: Number(settings.deposit_percentage),
-        requireDepositForLateCancellation: settings.require_deposit_for_late_cancellation
+        requireDepositForLateCancellation: settings.require_deposit_for_late_cancellation,
+        transferHolder: settings.transfer_holder ?? '',
+        transferAlias: settings.transfer_alias ?? '',
+        transferCbu: settings.transfer_cbu ?? ''
       });
       await reload();
     });
@@ -337,6 +340,49 @@ export function AdminPage() {
                   })}
                 />
                 Pedir seña
+              </label>
+            </div>
+
+            <div className="settings-subheading">
+              <h3>Datos de transferencia</h3>
+            </div>
+
+            <div className="settings-grid transfer-settings">
+              <label>
+                Titular
+                <input
+                  value={summary.settings.transfer_holder ?? ''}
+                  onChange={(event) => patchSummary({
+                    settings: {
+                      ...summary.settings,
+                      transfer_holder: event.target.value
+                    }
+                  })}
+                />
+              </label>
+              <label>
+                Alias
+                <input
+                  value={summary.settings.transfer_alias ?? ''}
+                  onChange={(event) => patchSummary({
+                    settings: {
+                      ...summary.settings,
+                      transfer_alias: event.target.value
+                    }
+                  })}
+                />
+              </label>
+              <label>
+                CBU/CVU
+                <input
+                  value={summary.settings.transfer_cbu ?? ''}
+                  onChange={(event) => patchSummary({
+                    settings: {
+                      ...summary.settings,
+                      transfer_cbu: event.target.value
+                    }
+                  })}
+                />
               </label>
             </div>
 

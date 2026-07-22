@@ -21,6 +21,11 @@ export function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
+  const transferDetails = confirmation?.transfer ?? {
+    holder: 'JV Urban Style Barberia',
+    alias: 'JVURBANSTYLE',
+    cbu: 'Configurar en admin'
+  };
 
   useEffect(() => {
     fetchServices()
@@ -58,10 +63,8 @@ export function BookingPage() {
         client: {
           firstName: String(formData.get('firstName') ?? ''),
           lastName: String(formData.get('lastName') ?? ''),
-          phone: String(formData.get('phone') ?? ''),
-          notes: String(formData.get('clientNotes') ?? '')
-        },
-        notes: String(formData.get('notes') ?? '')
+          phone: String(formData.get('phone') ?? '')
+        }
       });
 
       setConfirmation(response.appointment);
@@ -150,6 +153,23 @@ export function BookingPage() {
               {confirmation.depositRequired && (
                 <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
+              <div className="transfer-details">
+                <strong>Datos para transferir</strong>
+                <dl>
+                  <div>
+                    <dt>Titular</dt>
+                    <dd>{transferDetails.holder}</dd>
+                  </div>
+                  <div>
+                    <dt>Alias</dt>
+                    <dd>{transferDetails.alias}</dd>
+                  </div>
+                  <div>
+                    <dt>CBU/CVU</dt>
+                    <dd>{transferDetails.cbu}</dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           ) : (
             <form className="stack-form" onSubmit={handleSubmit}>
@@ -173,12 +193,8 @@ export function BookingPage() {
                 <input name="lastName" required minLength={2} />
               </label>
               <label>
-                WhatsApp
+                Número de teléfono
                 <input name="phone" required minLength={6} />
-              </label>
-              <label>
-                Notas opcionales
-                <textarea name="notes" rows={3} placeholder="Ej: tipo de corte, detalle de barba o preferencia para el turno" />
               </label>
 
               {error && <p className="error-text">{error}</p>}
@@ -190,6 +206,11 @@ export function BookingPage() {
           )}
         </aside>
       </section>
+
+      <footer className="site-footer">
+        <span>© 2026 JV Urban Style Barberia. Todos los derechos reservados.</span>
+        <span>Desarrollado por <strong>Enzo Dalmasso</strong></span>
+      </footer>
     </main>
   );
 }
