@@ -1,0 +1,27 @@
+services:
+  - type: web
+    runtime: node
+    name: jv-urban-style-api
+    repo: https://github.com/EnzoDalmasso/jv_urban_style
+    branch: main
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: false
+      - key: BUSINESS_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: SLOT_INTERVAL_MINUTES
+        value: 15
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
