@@ -110,6 +110,22 @@ export async function updateAdminStaff(pin: string, staffId: string, payload: {
   });
 }
 
+export async function createAdminStaff(pin: string, payload: {
+  fullName: string;
+  role?: string;
+}) {
+  return adminFetch('/api/admin/staff', pin, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteAdminStaff(pin: string, staffId: string) {
+  return adminFetch(`/api/admin/staff/${staffId}`, pin, {
+    method: 'DELETE'
+  });
+}
+
 export async function saveAdminBusinessHours(pin: string, payload: {
   staffId?: string | null;
   dayOfWeek: number;

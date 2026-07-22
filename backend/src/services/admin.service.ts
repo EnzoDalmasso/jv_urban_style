@@ -38,6 +38,11 @@ export const updateStaffSchema = z.object({
   isActive: z.boolean().optional()
 });
 
+export const createStaffSchema = z.object({
+  fullName: z.string().trim().min(2),
+  role: z.string().trim().min(2).default('barber')
+});
+
 export const saveBusinessHoursSchema = z.object({
   staffId: z.string().uuid().nullable().optional(),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
@@ -184,6 +189,65 @@ export async function updateStaff(id: string, input: z.infer<typeof updateStaffS
 
   if (error) {
     throw new HttpError(502, 'No se pudo guardar el profesional.', error);
+  }
+
+  return data;
+}
+
+export async function createStaff(input: z.infer<typeof createStaffSchema>) {
+  const parsed = createStaffSchema.parse(input);
+
+  if (!supabase) {
+    const next = {
+      id: randomUUID(),
+      full_name: parsed.fullName,
+      role: parsed.role,
+      timezone: env.BUSINESS_TIMEZONE,
+      is_active: true
+    };
+    demoStaff.push(next);
+    return next;
+  }
+
+  const { data: staff, error } = await supabase
+    .from('staff')
+    .insert({
+      full_name: parsed.fullName,
+      role: parsed.role,
+      timezone: env.BUSINESS_TIMEZONE,
+      is_active: true
+    })
+    .select('id, full_name, role, timezone, is_active')
+    .single();
+
+  if (error || !staff) {
+    throw new HttpError(502, 'No se pudo agregar el profesional.', error);
+  }
+
+  await attachAllActiveServices(staff.id);
+  return staff;
+}
+
+export async function deactivateStaff(id: string) {
+  const staffId = z.string().uuid().parse(id);
+
+  if (!supabase) {
+    const person = demoStaff.find((item) => item.id === staffId);
+    if (person) {
+      Object.assign(person, { is_active: false });
+    }
+    return { id: staffId, is_active: false };
+  }
+
+  const { data, error } = await supabase
+    .from('staff')
+    .update({ is_active: false })
+    .eq('id', staffId)
+    .select('id, full_name, role, timezone, is_active')
+    .single();
+
+  if (error) {
+    throw new HttpError(502, 'No se pudo quitar el profesional.', error);
   }
 
   return data;
@@ -343,16 +407,14 @@ async function getStaffForAdmin() {
   const { data, error } = await supabase
     .from('staff')
     .select('id, full_name, role, timezone, is_active')
+    .eq('is_active', true)
     .order('full_name', { ascending: true });
 
   if (error) {
     throw new HttpError(502, 'No se pudieron obtener los profesionales.', error);
   }
 
-  return (data ?? []).map((person) => ({
-    ...person,
-    full_name: normalizeStaffName(person.full_name)
-  }));
+  return dedupeStaffRows(data ?? []);
 }
 
 async function getBusinessHoursForAdmin() {
@@ -507,4 +569,53 @@ function removeUndefined<T extends Record<string, unknown>>(value: T) {
   return Object.fromEntries(
     Object.entries(value).filter(([, item]) => item !== undefined)
   );
+}
+
+async function attachAllActiveServices(staffId: string) {
+  if (!supabase) {
+    return;
+  }
+
+  const { data: services, error: servicesError } = await supabase
+    .from('services')
+    .select('id')
+    .eq('is_active', true);
+
+  if (servicesError) {
+    throw new HttpError(502, 'No se pudieron asociar servicios al profesional.', servicesError);
+  }
+
+  const rows = (services ?? []).map((service) => ({
+    staff_id: staffId,
+    service_id: service.id
+  }));
+
+  if (rows.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('staff_services')
+    .upsert(rows, { onConflict: 'staff_id,service_id' });
+
+  if (error) {
+    throw new HttpError(502, 'No se pudieron asociar servicios al profesional.', error);
+  }
+}
+
+function dedupeStaffRows(staff: Array<{ id: string; full_name: string; role?: string; timezone: string; is_active?: boolean }>) {
+  const seen = new Set<string>();
+  const result: typeof staff = [];
+
+  for (const person of staff) {
+    const displayName = normalizeStaffName(person.full_name);
+    const key = displayName.trim().toLowerCase();
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ ...person, full_name: displayName });
+    }
+  }
+
+  return result;
 }

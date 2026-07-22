@@ -794,7 +794,7 @@ select option {
   }
 
   .staff-row {
-    grid-template-columns: 1.4fr 1fr 100px 46px;
+    grid-template-columns: 1.4fr 1fr 100px 46px 46px;
     align-items: end;
   }
 

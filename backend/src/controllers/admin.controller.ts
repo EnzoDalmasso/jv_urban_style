@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
+  createStaff,
+  deactivateStaff,
   deleteSpecialHours,
   getAdminSummary,
   saveBusinessHours,
@@ -34,6 +36,17 @@ export async function patchService(req: Request, res: Response) {
 export async function patchStaff(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const staff = await updateStaff(params.id, req.body);
+  res.json({ staff });
+}
+
+export async function postStaff(req: Request, res: Response) {
+  const staff = await createStaff(req.body);
+  res.status(201).json({ staff });
+}
+
+export async function removeStaff(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const staff = await deactivateStaff(params.id);
   res.json({ staff });
 }
 

@@ -273,7 +273,24 @@ async function getAvailableStaff(serviceIds: string[], staffId?: string) {
     throw new HttpError(502, 'No se pudieron obtener los profesionales.', error);
   }
 
-  return data ?? [];
+  return dedupeStaffRows(data ?? []);
+}
+
+function dedupeStaffRows(staff: StaffRow[]) {
+  const seen = new Set<string>();
+  const result: StaffRow[] = [];
+
+  for (const person of staff) {
+    const displayName = normalizeStaffName(person.full_name);
+    const key = displayName.trim().toLowerCase();
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ ...person, full_name: displayName });
+    }
+  }
+
+  return result;
 }
 
 async function getBusinessHours(dayOfWeek: number, staffIds: string[]) {

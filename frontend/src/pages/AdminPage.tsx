@@ -3,6 +3,8 @@ import {
   Check,
   Clock,
   LogOut,
+  Minus,
+  Plus,
   Save,
   Scissors,
   ShieldCheck,
@@ -11,6 +13,8 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import {
+  createAdminStaff,
+  deleteAdminStaff,
   deleteAdminSpecialHours,
   fetchAdminSummary,
   saveAdminBusinessHours,
@@ -72,14 +76,16 @@ export function AdminPage() {
       .finally(() => setLoading(false));
   }, [date, pin]);
 
-  const appointmentsByStaff = useMemo(() => {
-    const groups = new Map<string, AdminSummary['appointments']>();
-    for (const appointment of summary?.appointments ?? []) {
-      const key = appointment.staffName || 'Sin profesional';
-      groups.set(key, [...(groups.get(key) ?? []), appointment]);
-    }
-    return [...groups.entries()];
-  }, [summary?.appointments]);
+  const staffHistory = useMemo(() => {
+    const activeStaff = (summary?.staff ?? []).filter((person) => person.is_active !== false);
+
+    return activeStaff.map((person) => ({
+      staff: person,
+      appointments: (summary?.appointments ?? []).filter((appointment) => (
+        appointment.staffId === person.id || appointment.staffName === person.full_name
+      ))
+    }));
+  }, [summary?.appointments, summary?.staff]);
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,6 +139,23 @@ export function AdminPage() {
       role: person.role,
       isActive: Boolean(person.is_active ?? true)
     });
+    await reload();
+    setSaving(null);
+  }
+
+  async function addStaff() {
+    setSaving('new-staff');
+    await createAdminStaff(pin, {
+      fullName: 'Nuevo profesional',
+      role: 'barber'
+    });
+    await reload();
+    setSaving(null);
+  }
+
+  async function removeStaff(person: Staff) {
+    setSaving(person.id);
+    await deleteAdminStaff(pin, person.id);
     await reload();
     setSaving(null);
   }
@@ -387,7 +410,15 @@ export function AdminPage() {
                 <p className="eyebrow">Equipo</p>
                 <h2>Profesionales</h2>
               </div>
-              <Scissors aria-hidden="true" />
+              <button
+                className="icon-button"
+                type="button"
+                onClick={addStaff}
+                disabled={saving === 'new-staff'}
+                aria-label="Agregar profesional"
+              >
+                <Plus aria-hidden="true" />
+              </button>
             </div>
 
             <div className="editable-list">
@@ -429,6 +460,15 @@ export function AdminPage() {
                     aria-label="Guardar profesional"
                   >
                     <Save aria-hidden="true" />
+                  </button>
+                  <button
+                    className="icon-button danger"
+                    type="button"
+                    onClick={() => removeStaff(person)}
+                    disabled={saving === person.id}
+                    aria-label="Quitar profesional"
+                  >
+                    <Minus aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -567,24 +607,34 @@ export function AdminPage() {
               <CalendarClock aria-hidden="true" />
             </div>
 
-            {appointmentsByStaff.length === 0 && <p className="muted">Sin turnos para esta fecha.</p>}
+            {staffHistory.length === 0 && <p className="muted">Sin profesionales activos.</p>}
 
-            {appointmentsByStaff.map(([staffName, appointments]) => (
-              <div className="appointment-group" key={staffName}>
-                <h3>{staffName}</h3>
+            {staffHistory.map(({ staff, appointments }) => (
+              <div className="appointment-group" key={staff.id}>
+                <h3>{staff.full_name}</h3>
                 <div className="appointment-list">
+                  {appointments.length === 0 && (
+                    <article className="appointment-card empty">
+                      <div>
+                        <strong>{date}</strong>
+                        <span>Sin cortes registrados</span>
+                      </div>
+                    </article>
+                  )}
+
                   {appointments.map((appointment) => (
                     <article className="appointment-card" key={appointment.id}>
                       <div>
-                        <strong>{new Date(appointment.startsAt).toLocaleTimeString('es-AR', {
+                        <strong>{new Date(appointment.startsAt).toLocaleDateString('es-AR')}</strong>
+                        <span>{new Date(appointment.startsAt).toLocaleTimeString('es-AR', {
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}</strong>
+                        })}</span>
                         <span>{appointment.clientName}</span>
                         <small>{appointment.clientPhone}</small>
                       </div>
                       <div>
-                        <span>{appointment.services.map((service) => service.name).join(', ')}</span>
+                        <span>Corte: {appointment.services.map((service) => service.name).join(', ')}</span>
                         <small>{formatPrice(appointment.totalPrice)} - {appointment.status}</small>
                         {appointment.depositRequired && (
                           <small>Seña: {formatPrice(appointment.depositAmount)} ({appointment.depositStatus})</small>
