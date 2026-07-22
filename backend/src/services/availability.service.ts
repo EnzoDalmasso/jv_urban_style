@@ -433,16 +433,18 @@ function buildSlots(params: {
   staff: StaffRow;
 }): Slot[] {
   const slots: Slot[] = [];
+  const nowUtc = DateTime.now().toUTC();
   let cursor = params.opensAt;
 
   while (cursor.plus({ minutes: params.durationMinutes }) <= params.closesAt) {
     const slotEnd = cursor.plus({ minutes: params.durationMinutes });
-    const slotInterval = Interval.fromDateTimes(cursor.toUTC(), slotEnd.toUTC());
+    const slotStartUtc = cursor.toUTC();
+    const slotInterval = Interval.fromDateTimes(slotStartUtc, slotEnd.toUTC());
     const busy = params.busyIntervals.find((item) => item.interval.overlaps(slotInterval));
-    const startsAt = cursor.toUTC().toISO();
+    const startsAt = slotStartUtc.toISO();
     const endsAt = slotEnd.toUTC().toISO();
 
-    if (startsAt && endsAt) {
+    if (startsAt && endsAt && slotStartUtc > nowUtc) {
       slots.push({
         time: cursor.toFormat('HH:mm'),
         startsAt,
