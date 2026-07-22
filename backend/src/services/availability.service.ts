@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { demoServices, demoStaff } from '../lib/demoData.js';
 import { supabase } from '../lib/supabase.js';
 import { HttpError } from '../utils/httpError.js';
+import { normalizeStaffName } from '../utils/staffNames.js';
 import { isMissingSchemaError } from '../utils/supabaseError.js';
 
 const uuidSchema = z.string().uuid();
@@ -426,7 +427,7 @@ function buildSlots(params: {
         startsAt,
         endsAt,
         staffId: params.staff.id,
-        staffName: params.staff.full_name,
+        staffName: normalizeStaffName(params.staff.full_name),
         isAvailable: !busy,
         reason: busy?.reason
       });

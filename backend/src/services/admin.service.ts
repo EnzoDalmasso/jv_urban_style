@@ -13,6 +13,7 @@ import {
 import { supabase } from '../lib/supabase.js';
 import { getShopSettings } from './settings.service.js';
 import { HttpError } from '../utils/httpError.js';
+import { normalizeStaffName } from '../utils/staffNames.js';
 import { isMissingSchemaError } from '../utils/supabaseError.js';
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -348,7 +349,10 @@ async function getStaffForAdmin() {
     throw new HttpError(502, 'No se pudieron obtener los profesionales.', error);
   }
 
-  return data ?? [];
+  return (data ?? []).map((person) => ({
+    ...person,
+    full_name: normalizeStaffName(person.full_name)
+  }));
 }
 
 async function getBusinessHoursForAdmin() {
@@ -444,7 +448,7 @@ async function getAppointmentsForAdmin(date: string) {
     clientName: `${row.clients?.first_name ?? ''} ${row.clients?.last_name ?? ''}`.trim(),
     clientPhone: row.clients?.phone ?? '',
     staffId: row.staff?.id ?? '',
-    staffName: row.staff?.full_name ?? 'Sin profesional',
+    staffName: row.staff?.full_name ? normalizeStaffName(row.staff.full_name) : 'Sin profesional',
     services: (row.appointment_services ?? []).map((service: any) => ({
       name: service.service_name_at_booking,
       durationMinutes: service.duration_minutes,
