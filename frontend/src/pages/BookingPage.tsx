@@ -39,7 +39,7 @@ export function BookingPage() {
   const proofWhatsappUrl = confirmation
     ? buildWhatsappUrl(
         confirmation.businessWhatsappPhone,
-        `Hola JV Urban Style, ya reservé mi turno. Código: ${confirmation.publicCode}. Envío el comprobante de la seña.`
+        'Hola JV Urban Style, ya reservé mi turno. Envío el comprobante de la seña.'
       )
     : null;
 

@@ -53,11 +53,13 @@ type BusyRow = {
   staff_id: string;
   starts_at: string;
   ends_at: string;
+  status: 'pending' | 'confirmed';
+  deposit_status?: string | null;
 };
 
 type BusyInterval = {
   interval: Interval;
-  reason: 'Reservado' | 'No disponible';
+  reason: 'Pendiente de comprobante' | 'Reservado' | 'No disponible';
 };
 
 export type Slot = {
@@ -346,7 +348,7 @@ async function getAppointments(dayStartIso: string | null, dayEndIso: string | n
 
   const { data, error } = await supabase
     .from('appointments')
-    .select('staff_id, starts_at, ends_at')
+    .select('staff_id, starts_at, ends_at, status, deposit_status')
     .in('staff_id', staffIds)
     .in('status', ['pending', 'confirmed'])
     .lt('starts_at', dayEndIso)
@@ -408,7 +410,9 @@ function localTimeToDateTime(date: string, time: string, zone: string) {
 function toBusyIntervals(rows: { appointments: BusyRow[]; timeOff: BusyRow[] }) {
   const appointmentIntervals = rows.appointments.map((row) => ({
     interval: Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)),
-    reason: 'Reservado' as const
+    reason: row.status === 'pending' || row.deposit_status === 'pending'
+      ? 'Pendiente de comprobante' as const
+      : 'Reservado' as const
   }));
 
   const timeOffIntervals = rows.timeOff.map((row) => ({

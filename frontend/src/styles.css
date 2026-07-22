@@ -817,7 +817,7 @@ select option {
 
 .status-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(112px, 1fr));
   gap: 8px;
 }
 
@@ -931,7 +931,7 @@ select option {
   }
 
   .appointment-card {
-    grid-template-columns: 1fr 1.35fr 240px;
+    grid-template-columns: minmax(150px, 0.8fr) minmax(240px, 1.2fr) minmax(280px, 0.9fr);
     align-items: center;
   }
 }

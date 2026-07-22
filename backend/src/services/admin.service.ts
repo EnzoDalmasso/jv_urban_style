@@ -479,19 +479,21 @@ export async function updateAppointmentStatus(id: string, input: z.infer<typeof 
 export async function updateAppointmentDeposit(id: string, input: z.infer<typeof updateAppointmentDepositSchema>) {
   const safeId = z.string().uuid().parse(id);
   const parsed = updateAppointmentDepositSchema.parse(input);
+  const nextStatus = parsed.depositStatus === 'pending' ? 'pending' : 'confirmed';
 
   if (!supabase) {
-    return { id: safeId, deposit_status: parsed.depositStatus };
+    return { id: safeId, deposit_status: parsed.depositStatus, status: nextStatus };
   }
 
   const { data, error } = await supabase
     .from('appointments')
     .update({
       deposit_status: parsed.depositStatus,
-      deposit_required: parsed.depositStatus !== 'waived'
+      deposit_required: parsed.depositStatus !== 'waived',
+      status: nextStatus
     })
     .eq('id', safeId)
-    .select('id, deposit_status, deposit_required')
+    .select('id, deposit_status, deposit_required, status')
     .single();
 
   if (error) {

@@ -79,6 +79,18 @@ function depositLabel(status: string) {
   return labels[status] ?? status;
 }
 
+function appointmentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending: 'Pendiente de comprobante',
+    confirmed: 'Reservado',
+    cancelled: 'Cancelado',
+    completed: 'Hecho',
+    no_show: 'No vino'
+  };
+
+  return labels[status] ?? status;
+}
+
 export function AdminPage() {
   const [pin, setPin] = useState(() => localStorage.getItem('adminPin') ?? '');
   const [pinDraft, setPinDraft] = useState('');
@@ -258,11 +270,23 @@ export function AdminPage() {
     });
   }
 
-  async function changeDepositStatus(id: string, depositStatus: string) {
-    await runAdminAction(`deposit-${id}`, async () => {
+  async function changeDepositStatus(id: string, depositStatus: string, whatsappUrl?: string | null) {
+    const notificationUrl = depositStatus === 'paid' ? whatsappUrl : null;
+    const whatsappWindow = depositStatus === 'paid' && whatsappUrl
+      ? window.open('about:blank', '_blank')
+      : null;
+    const saved = await runAdminAction(`deposit-${id}`, async () => {
       await updateAdminAppointmentDepositStatus(pin, id, depositStatus);
       await reload();
     });
+
+    if (whatsappWindow) {
+      if (saved && notificationUrl) {
+        whatsappWindow.location.href = notificationUrl;
+      } else {
+        whatsappWindow.close();
+      }
+    }
   }
 
   async function runAdminAction(actionId: string, action: () => Promise<void>) {
@@ -271,8 +295,10 @@ export function AdminPage() {
 
     try {
       await action();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
+      return false;
     } finally {
       setSaving(null);
     }
@@ -775,11 +801,11 @@ export function AdminPage() {
                     const servicesText = appointment.services.map((service) => service.name).join(', ');
                     const pendingProofUrl = buildWhatsappUrl(
                       appointment.clientPhone,
-                      `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña. Código: ${appointment.publicCode}.`
+                      `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña.`
                     );
                     const acceptedUrl = buildWhatsappUrl(
                       appointment.clientPhone,
-                      `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style. Código: ${appointment.publicCode}.`
+                      `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style.`
                     );
 
                     return (
@@ -792,7 +818,13 @@ export function AdminPage() {
                       </div>
                       <div>
                         <span>Corte: {servicesText}</span>
-                        <small>{formatPrice(appointment.totalPrice)} - {appointment.status}</small>
+                        <small>
+                          {formatPrice(appointment.totalPrice)} - {
+                            appointment.depositRequired && appointment.depositStatus === 'pending'
+                              ? 'Pendiente de comprobante'
+                              : appointmentStatusLabel(appointment.status)
+                          }
+                        </small>
                         {appointment.depositRequired && (
                           <small>Seña: {formatPrice(appointment.depositAmount)} ({depositLabel(appointment.depositStatus)})</small>
                         )}
@@ -804,7 +836,8 @@ export function AdminPage() {
                             disabled={saving === `deposit-${appointment.id}`}
                             onClick={() => changeDepositStatus(
                               appointment.id,
-                              appointment.depositStatus === 'paid' ? 'pending' : 'paid'
+                              appointment.depositStatus === 'paid' ? 'pending' : 'paid',
+                              appointment.depositStatus === 'paid' ? null : acceptedUrl
                             )}
                           >
                             {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
@@ -813,11 +846,6 @@ export function AdminPage() {
                         {pendingProofUrl && appointment.depositStatus !== 'paid' && (
                           <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
                             Pedir comprobante
-                          </a>
-                        )}
-                        {acceptedUrl && appointment.depositStatus === 'paid' && (
-                          <a className="status-link" href={acceptedUrl} target="_blank" rel="noreferrer">
-                            Avisar confirmado
                           </a>
                         )}
                         <button
@@ -832,7 +860,7 @@ export function AdminPage() {
                           disabled={saving === appointment.id}
                           onClick={() => changeAppointmentStatus(appointment.id, 'cancelled')}
                         >
-                          Cancelar
+                          {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
                         </button>
                         <button
                           type="button"
