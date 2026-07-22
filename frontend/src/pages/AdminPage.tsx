@@ -81,6 +81,7 @@ export function AdminPage() {
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
     localStorage.setItem('adminPin', pinDraft);
     setPin(pinDraft);
   }
@@ -189,6 +190,7 @@ export function AdminPage() {
                 type="password"
               />
             </label>
+            {error && <p className="error-text">{error}</p>}
             <button className="primary-cta form-cta" type="submit">Entrar</button>
           </form>
         </section>

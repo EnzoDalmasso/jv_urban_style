@@ -140,14 +140,20 @@ export async function updateAdminAppointmentStatus(pin: string, id: string, stat
 }
 
 async function adminFetch<T = unknown>(path: string, pin: string, init?: RequestInit) {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-pin': pin,
-      ...(init?.headers ?? {})
-    }
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pin': pin,
+        ...(init?.headers ?? {})
+      }
+    });
+  } catch {
+    throw new Error('No pudimos conectar con el backend. Revisa VITE_API_URL en Vercel y CORS_ORIGIN en Render.');
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
