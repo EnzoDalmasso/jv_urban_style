@@ -33,7 +33,7 @@ import type { AdminAppointment, AdminSummary, BusinessHours, Service, ShopSettin
 
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'history';
+type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'upcoming' | 'history';
 type SpecialMode = 'hours' | 'closed' | 'vacation';
 
 const defaultOpenPanels: Record<AdminPanelId, boolean> = {
@@ -42,6 +42,7 @@ const defaultOpenPanels: Record<AdminPanelId, boolean> = {
   staff: false,
   hours: false,
   specialHours: false,
+  upcoming: true,
   history: true
 };
 
@@ -164,6 +165,103 @@ function appointmentDisplayLabel(appointment: AdminAppointment) {
   return appointmentStatusLabel(appointment.status);
 }
 
+type AppointmentCardProps = {
+  appointment: AdminAppointment;
+  saving: string | null;
+  onChangeStatus: (id: string, status: string) => void;
+  onChangeDepositStatus: (id: string, depositStatus: string, whatsappUrl?: string | null) => void;
+};
+
+function AppointmentCard({
+  appointment,
+  saving,
+  onChangeStatus,
+  onChangeDepositStatus
+}: AppointmentCardProps) {
+  const appointmentDate = new Date(appointment.startsAt).toLocaleDateString('es-AR');
+  const appointmentTime = formatAppointmentTime(appointment.startsAt);
+  const servicesText = appointment.services.map((service) => service.name).join(', ');
+  const isTerminal = isTerminalAppointment(appointment.status);
+  const displayStatus = appointmentDisplayLabel(appointment);
+  const pendingProofUrl = buildWhatsappUrl(
+    appointment.clientPhone,
+    `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña.`
+  );
+  const acceptedUrl = buildWhatsappUrl(
+    appointment.clientPhone,
+    `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style.`
+  );
+
+  return (
+    <article className="appointment-card">
+      <div>
+        <strong>{appointmentDate}</strong>
+        <span>{appointmentTime}</span>
+        <span>{appointment.clientName}</span>
+        <small>{appointment.clientPhone}</small>
+      </div>
+      <div>
+        <span>Corte: {servicesText}</span>
+        <small>
+          {formatPrice(appointment.totalPrice)} - {displayStatus}
+        </small>
+        {appointment.depositRequired && (
+          <small>Seña: {formatPrice(appointment.depositAmount)} ({depositLabel(appointment.depositStatus)})</small>
+        )}
+      </div>
+      <div className="status-actions">
+        {isTerminal ? (
+          <span className={`status-badge status-${appointment.status}`}>
+            {displayStatus}
+          </span>
+        ) : (
+          <>
+            {appointment.depositRequired && (
+              <button
+                type="button"
+                disabled={saving === `deposit-${appointment.id}`}
+                onClick={() => onChangeDepositStatus(
+                  appointment.id,
+                  appointment.depositStatus === 'paid' ? 'pending' : 'paid',
+                  appointment.depositStatus === 'paid' ? null : acceptedUrl
+                )}
+              >
+                {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
+              </button>
+            )}
+            {pendingProofUrl && appointment.depositStatus !== 'paid' && (
+              <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
+                Pedir comprobante
+              </a>
+            )}
+            <button
+              type="button"
+              disabled={saving === appointment.id}
+              onClick={() => onChangeStatus(appointment.id, 'completed')}
+            >
+              {saving === appointment.id ? 'Guardando...' : 'Hecho'}
+            </button>
+            <button
+              type="button"
+              disabled={saving === appointment.id}
+              onClick={() => onChangeStatus(appointment.id, 'cancelled')}
+            >
+              {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
+            </button>
+            <button
+              type="button"
+              disabled={saving === appointment.id}
+              onClick={() => onChangeStatus(appointment.id, 'no_show')}
+            >
+              No vino
+            </button>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export function AdminPage() {
   const [pin, setPin] = useState(() => localStorage.getItem('adminPin') ?? '');
   const [pinDraft, setPinDraft] = useState('');
@@ -174,6 +272,7 @@ export function AdminPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [openPanels, setOpenPanels] = useState(defaultOpenPanels);
   const [openStaffHistory, setOpenStaffHistory] = useState<Record<string, boolean>>({});
+  const [openStaffUpcoming, setOpenStaffUpcoming] = useState<Record<string, boolean>>({});
   const [specialMode, setSpecialMode] = useState<SpecialMode>('hours');
 
   useEffect(() => {
@@ -206,6 +305,17 @@ export function AdminPage() {
     }));
   }, [summary?.appointments, summary?.staff]);
 
+  const staffUpcomingAppointments = useMemo(() => {
+    const activeStaff = (summary?.staff ?? []).filter((person) => person.is_active !== false);
+
+    return activeStaff.map((person) => ({
+      staff: person,
+      appointments: (summary?.upcomingAppointments ?? []).filter((appointment) => (
+        appointment.staffId === person.id || appointment.staffName === person.full_name
+      ))
+    }));
+  }, [summary?.staff, summary?.upcomingAppointments]);
+
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -228,6 +338,13 @@ export function AdminPage() {
 
   function toggleStaffHistory(staffId: string) {
     setOpenStaffHistory((current) => ({
+      ...current,
+      [staffId]: !current[staffId]
+    }));
+  }
+
+  function toggleStaffUpcoming(staffId: string) {
+    setOpenStaffUpcoming((current) => ({
       ...current,
       [staffId]: !current[staffId]
     }));
@@ -472,6 +589,11 @@ export function AdminPage() {
           <Scissors aria-hidden="true" />
           <span>{summary?.services.filter((service) => service.is_active !== false).length ?? 0}</span>
           <small>servicios</small>
+        </div>
+        <div className="admin-stat">
+          <CalendarClock aria-hidden="true" />
+          <span>{summary?.upcomingAppointments?.length ?? 0}</span>
+          <small>futuros</small>
         </div>
       </section>
 
@@ -950,6 +1072,62 @@ export function AdminPage() {
               <button
                 className="panel-toggle-button"
                 type="button"
+                onClick={() => togglePanel('upcoming')}
+                aria-expanded={openPanels.upcoming}
+              >
+                <div>
+                  <p className="eyebrow">Pendientes</p>
+                  <h2>Solicitudes futuras</h2>
+                </div>
+                {openPanels.upcoming ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
+              <CalendarClock aria-hidden="true" />
+            </div>
+
+            {openPanels.upcoming && (
+              <>
+                {(summary.upcomingAppointments ?? []).length === 0 && (
+                  <p className="muted panel-empty-copy">Sin solicitudes futuras para gestionar.</p>
+                )}
+
+                {staffUpcomingAppointments
+                  .filter(({ appointments }) => appointments.length > 0)
+                  .map(({ staff, appointments }) => (
+                    <div className="appointment-group" key={staff.id}>
+                      <button
+                        className="staff-history-toggle"
+                        type="button"
+                        onClick={() => toggleStaffUpcoming(staff.id)}
+                        aria-expanded={Boolean(openStaffUpcoming[staff.id])}
+                      >
+                        <span>{staff.full_name}</span>
+                        <small>{appointments.length} pendientes</small>
+                        {openStaffUpcoming[staff.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+                      </button>
+                      {openStaffUpcoming[staff.id] && (
+                        <div className="appointment-list">
+                          {appointments.map((appointment) => (
+                            <AppointmentCard
+                              appointment={appointment}
+                              key={appointment.id}
+                              saving={saving}
+                              onChangeStatus={changeAppointmentStatus}
+                              onChangeDepositStatus={changeDepositStatus}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </>
+            )}
+          </section>
+
+          <section className="admin-panel wide">
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
                 onClick={() => togglePanel('history')}
                 aria-expanded={openPanels.history}
               >
@@ -989,90 +1167,15 @@ export function AdminPage() {
                     </article>
                   )}
 
-                  {appointments.map((appointment) => {
-                    const appointmentDate = new Date(appointment.startsAt).toLocaleDateString('es-AR');
-                    const appointmentTime = formatAppointmentTime(appointment.startsAt);
-                    const servicesText = appointment.services.map((service) => service.name).join(', ');
-                    const isTerminal = isTerminalAppointment(appointment.status);
-                    const displayStatus = appointmentDisplayLabel(appointment);
-                    const pendingProofUrl = buildWhatsappUrl(
-                      appointment.clientPhone,
-                      `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña.`
-                    );
-                    const acceptedUrl = buildWhatsappUrl(
-                      appointment.clientPhone,
-                      `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style.`
-                    );
-
-                    return (
-                    <article className="appointment-card" key={appointment.id}>
-                      <div>
-                        <strong>{appointmentDate}</strong>
-                        <span>{appointmentTime}</span>
-                        <span>{appointment.clientName}</span>
-                        <small>{appointment.clientPhone}</small>
-                      </div>
-                      <div>
-                        <span>Corte: {servicesText}</span>
-                        <small>
-                          {formatPrice(appointment.totalPrice)} - {displayStatus}
-                        </small>
-                        {appointment.depositRequired && (
-                          <small>Seña: {formatPrice(appointment.depositAmount)} ({depositLabel(appointment.depositStatus)})</small>
-                        )}
-                      </div>
-                      <div className="status-actions">
-                        {isTerminal ? (
-                          <span className={`status-badge status-${appointment.status}`}>
-                            {displayStatus}
-                          </span>
-                        ) : (
-                          <>
-                        {appointment.depositRequired && (
-                          <button
-                            type="button"
-                            disabled={saving === `deposit-${appointment.id}`}
-                            onClick={() => changeDepositStatus(
-                              appointment.id,
-                              appointment.depositStatus === 'paid' ? 'pending' : 'paid',
-                              appointment.depositStatus === 'paid' ? null : acceptedUrl
-                            )}
-                          >
-                            {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
-                          </button>
-                        )}
-                        {pendingProofUrl && appointment.depositStatus !== 'paid' && (
-                          <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
-                            Pedir comprobante
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          disabled={saving === appointment.id}
-                          onClick={() => changeAppointmentStatus(appointment.id, 'completed')}
-                        >
-                          {saving === appointment.id ? 'Guardando...' : 'Hecho'}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={saving === appointment.id}
-                          onClick={() => changeAppointmentStatus(appointment.id, 'cancelled')}
-                        >
-                          {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={saving === appointment.id}
-                          onClick={() => changeAppointmentStatus(appointment.id, 'no_show')}
-                        >
-                          No vino
-                        </button>
-                          </>
-                        )}
-                      </div>
-                    </article>
-                    );
-                  })}
+                  {appointments.map((appointment) => (
+                    <AppointmentCard
+                      appointment={appointment}
+                      key={appointment.id}
+                      saving={saving}
+                      onChangeStatus={changeAppointmentStatus}
+                      onChangeDepositStatus={changeDepositStatus}
+                    />
+                  ))}
                 </div>
                 )}
               </div>

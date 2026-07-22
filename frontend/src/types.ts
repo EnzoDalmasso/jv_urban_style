@@ -92,6 +92,7 @@ export type AdminSummary = {
   businessHours: BusinessHours[];
   specialHours: SpecialHours[];
   appointments: AdminAppointment[];
+  upcomingAppointments: AdminAppointment[];
 };
 
 export type CreateAppointmentResponse = {

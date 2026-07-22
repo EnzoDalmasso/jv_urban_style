@@ -748,6 +748,10 @@ select option {
   margin-bottom: 14px;
 }
 
+.panel-empty-copy {
+  margin: 18px 0 0;
+}
+
 .editable-list,
 .hours-list,
 .mini-list,

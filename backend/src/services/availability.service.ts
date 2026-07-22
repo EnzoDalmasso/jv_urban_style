@@ -91,6 +91,7 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
     (sum, service) => sum + Number(service.duration_minutes),
     0
   );
+  const slotIntervalMinutes = Math.max(env.SLOT_INTERVAL_MINUTES, durationMinutes);
 
   if (!supabase) {
     return calculateDemoAvailability({
@@ -140,7 +141,7 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
       opensAt,
       closesAt,
       durationMinutes,
-      intervalMinutes: env.SLOT_INTERVAL_MINUTES,
+      intervalMinutes: slotIntervalMinutes,
       busyIntervals,
       staff: person
     });
@@ -217,7 +218,7 @@ function calculateDemoAvailability(params: {
     opensAt: localTimeToDateTime(params.date, '10:00:00', person.timezone),
     closesAt: localTimeToDateTime(params.date, '19:00:00', person.timezone),
     durationMinutes: params.durationMinutes,
-    intervalMinutes: env.SLOT_INTERVAL_MINUTES,
+    intervalMinutes: Math.max(env.SLOT_INTERVAL_MINUTES, params.durationMinutes),
     busyIntervals: demoBusyIntervals,
     staff: person
   }));

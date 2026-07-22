@@ -89,20 +89,22 @@ export async function getAdminSummary(date: string) {
       staff: demoStaff,
       businessHours: demoBusinessHours,
       specialHours: demoSpecialBusinessHours.filter((item) => item.date === safeDate),
-      appointments: demoAppointments
+      appointments: demoAppointments,
+      upcomingAppointments: []
     };
   }
 
-  const [settings, services, staff, businessHours, specialHours, appointments] = await Promise.all([
+  const [settings, services, staff, businessHours, specialHours, appointments, upcomingAppointments] = await Promise.all([
     getShopSettings(),
     getServicesForAdmin(),
     getStaffForAdmin(),
     getBusinessHoursForAdmin(),
     getSpecialHoursForAdmin(safeDate),
-    getAppointmentsForAdmin(safeDate)
+    getAppointmentsForAdmin(safeDate),
+    getUpcomingAppointmentsForAdmin(safeDate)
   ]);
 
-  return { settings, services, staff, businessHours, specialHours, appointments };
+  return { settings, services, staff, businessHours, specialHours, appointments, upcomingAppointments };
 }
 
 export async function updateSettings(input: z.infer<typeof updateSettingsSchema>) {
@@ -618,7 +620,57 @@ async function getAppointmentsForAdmin(date: string) {
     throw new HttpError(502, 'No se pudieron obtener los turnos.', error);
   }
 
-  return (data ?? []).map((row: any) => ({
+  return (data ?? []).map(mapAppointmentRow);
+}
+
+async function getUpcomingAppointmentsForAdmin(date: string) {
+  if (!supabase) {
+    return [];
+  }
+
+  const localDay = DateTime.fromISO(date, { zone: env.BUSINESS_TIMEZONE }).startOf('day');
+  const startsAfter = localDay.plus({ days: 1 }).toUTC().toISO();
+
+  if (!startsAfter) {
+    throw new HttpError(400, 'Rango de fecha invalido.');
+  }
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(`
+      id,
+      public_code,
+      starts_at,
+      ends_at,
+      status,
+      notes,
+      total_duration_minutes,
+      total_price,
+      deposit_required,
+      deposit_amount,
+      deposit_status,
+      clients(first_name, last_name, phone),
+      staff(id, full_name),
+      appointment_services(service_name_at_booking, duration_minutes, price_at_booking)
+    `)
+    .gte('starts_at', startsAfter)
+    .eq('status', 'pending')
+    .order('starts_at', { ascending: true })
+    .limit(80);
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      throw new HttpError(409, 'Falta ejecutar la migracion SQL del panel admin en Supabase.', error);
+    }
+
+    throw new HttpError(502, 'No se pudieron obtener los turnos pendientes.', error);
+  }
+
+  return (data ?? []).map(mapAppointmentRow);
+}
+
+function mapAppointmentRow(row: any) {
+  return {
     id: row.id,
     publicCode: row.public_code,
     startsAt: row.starts_at,
@@ -639,7 +691,7 @@ async function getAppointmentsForAdmin(date: string) {
       durationMinutes: service.duration_minutes,
       price: Number(service.price_at_booking)
     }))
-  }));
+  };
 }
 
 async function findBusinessHours(staffId: string | null, dayOfWeek: number) {
