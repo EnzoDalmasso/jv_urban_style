@@ -23,6 +23,9 @@ Usar el Blueprint del repo:
 - Start command: `npm start`
 - Health check path: `/health`
 
+Si por error creaste el servicio como Docker, tambien funciona: el repo incluye un
+`Dockerfile` en la raiz y otro en `backend/`.
+
 Variables en Render:
 
 ```env
