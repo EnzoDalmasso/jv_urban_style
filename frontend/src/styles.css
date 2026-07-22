@@ -116,11 +116,6 @@ h2 {
   margin-bottom: 18px;
 }
 
-.brand-subtitle {
-  color: #c9c4bb;
-  font-weight: 750;
-}
-
 .brand-logo {
   position: relative;
   width: 96px;
@@ -208,27 +203,6 @@ h2 {
   font-size: 0.39rem;
 }
 
-.hero-metric {
-  display: grid;
-  gap: 8px;
-  max-width: 320px;
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid rgba(246, 241, 231, 0.14);
-  border-radius: 8px;
-  background: rgba(13, 15, 20, 0.78);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
-}
-
-.hero-metric svg {
-  color: #42f4c8;
-}
-
-.hero-metric strong {
-  font-size: 1.45rem;
-}
-
-.hero-metric span,
 .muted {
   color: #a9a39a;
   line-height: 1.55;
@@ -760,10 +734,10 @@ select option {
   }
 
   .hero {
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
-    min-height: clamp(420px, 56vh, 560px);
-    padding: 44px 0 30px;
+    min-height: auto;
+    padding: 38px 0 28px;
   }
 
   .booking-layout {

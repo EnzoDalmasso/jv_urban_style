@@ -1,4 +1,4 @@
-import { CheckCircle2, Scissors, Sparkles } from 'lucide-react';
+import { CheckCircle2, Scissors } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import { DateTimeSelector } from '../components/DateTimeSelector';
@@ -81,7 +81,6 @@ export function BookingPage() {
             <BrandLogo />
             <div>
               <p className="eyebrow">JV Urban Style</p>
-              <span className="brand-subtitle">Barbería urbana desde 2007</span>
             </div>
           </div>
           <h1>Reservas urbanas, agenda prolija y estilo sin espera.</h1>
@@ -93,11 +92,6 @@ export function BookingPage() {
             <Scissors aria-hidden="true" />
             Reservar turno
           </a>
-        </div>
-        <div className="hero-metric" aria-label="Resumen de servicios">
-          <Sparkles aria-hidden="true" />
-          <strong>10:00 - 19:00</strong>
-          <span>Cortes, barba y color con profesionales activos.</span>
         </div>
       </section>
 
@@ -183,8 +177,8 @@ export function BookingPage() {
                 <input name="phone" required minLength={6} />
               </label>
               <label>
-                Notas
-                <textarea name="notes" rows={3} />
+                Notas opcionales
+                <textarea name="notes" rows={3} placeholder="Ej: tipo de corte, detalle de barba o preferencia para el turno" />
               </label>
 
               {error && <p className="error-text">{error}</p>}

@@ -109,99 +109,112 @@ export function AdminPage() {
   }
 
   async function saveSettings(settings: ShopSettings) {
-    setSaving('settings');
-    await updateAdminSettings(pin, {
-      cancellationNoticeMinutes: Number(settings.cancellation_notice_minutes),
-      depositPercentage: Number(settings.deposit_percentage),
-      requireDepositForLateCancellation: settings.require_deposit_for_late_cancellation
+    await runAdminAction('settings', async () => {
+      await updateAdminSettings(pin, {
+        cancellationNoticeMinutes: Number(settings.cancellation_notice_minutes),
+        depositPercentage: Number(settings.deposit_percentage),
+        requireDepositForLateCancellation: settings.require_deposit_for_late_cancellation
+      });
+      await reload();
     });
-    await reload();
-    setSaving(null);
   }
 
   async function saveService(service: Service) {
-    setSaving(service.id);
-    await updateAdminService(pin, service.id, {
-      name: service.name,
-      description: service.description,
-      durationMinutes: Number(service.duration_minutes),
-      price: Number(service.price),
-      isActive: Boolean(service.is_active ?? true)
+    await runAdminAction(service.id, async () => {
+      await updateAdminService(pin, service.id, {
+        name: service.name,
+        description: service.description,
+        durationMinutes: Number(service.duration_minutes),
+        price: Number(service.price),
+        isActive: Boolean(service.is_active ?? true)
+      });
+      await reload();
     });
-    await reload();
-    setSaving(null);
   }
 
   async function saveStaff(person: Staff) {
-    setSaving(person.id);
-    await updateAdminStaff(pin, person.id, {
-      fullName: person.full_name,
-      role: person.role,
-      isActive: Boolean(person.is_active ?? true)
+    await runAdminAction(person.id, async () => {
+      await updateAdminStaff(pin, person.id, {
+        fullName: person.full_name,
+        role: person.role,
+        isActive: Boolean(person.is_active ?? true)
+      });
+      await reload();
     });
-    await reload();
-    setSaving(null);
   }
 
   async function addStaff() {
-    setSaving('new-staff');
-    await createAdminStaff(pin, {
-      fullName: 'Nuevo profesional',
-      role: 'barber'
+    await runAdminAction('new-staff', async () => {
+      await createAdminStaff(pin, {
+        fullName: 'Nuevo profesional',
+        role: 'barber'
+      });
+      await reload();
     });
-    await reload();
-    setSaving(null);
   }
 
   async function removeStaff(person: Staff) {
-    setSaving(person.id);
-    await deleteAdminStaff(pin, person.id);
-    await reload();
-    setSaving(null);
+    await runAdminAction(person.id, async () => {
+      await deleteAdminStaff(pin, person.id);
+      await reload();
+    });
   }
 
   async function saveHours(hours: BusinessHours) {
-    setSaving(`hours-${hours.id}`);
-    await saveAdminBusinessHours(pin, {
-      staffId: hours.staff_id,
-      dayOfWeek: hours.day_of_week,
-      opensAt: shortTime(hours.opens_at),
-      closesAt: shortTime(hours.closes_at),
-      isClosed: hours.is_closed
+    await runAdminAction(`hours-${hours.id}`, async () => {
+      await saveAdminBusinessHours(pin, {
+        staffId: hours.staff_id,
+        dayOfWeek: hours.day_of_week,
+        opensAt: shortTime(hours.opens_at),
+        closesAt: shortTime(hours.closes_at),
+        isClosed: hours.is_closed
+      });
+      await reload();
     });
-    await reload();
-    setSaving(null);
   }
 
   async function addSpecialHours(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setSaving('special');
-    await saveAdminSpecialHours(pin, {
-      date: String(formData.get('date')),
-      staffId: String(formData.get('staffId') || '') || null,
-      opensAt: String(formData.get('opensAt')),
-      closesAt: String(formData.get('closesAt')),
-      isClosed: formData.get('isClosed') === 'on',
-      reason: String(formData.get('reason') ?? '')
+    await runAdminAction('special', async () => {
+      await saveAdminSpecialHours(pin, {
+        date: String(formData.get('date')),
+        staffId: String(formData.get('staffId') || '') || null,
+        opensAt: String(formData.get('opensAt')),
+        closesAt: String(formData.get('closesAt')),
+        isClosed: formData.get('isClosed') === 'on',
+        reason: String(formData.get('reason') ?? '')
+      });
+      event.currentTarget.reset();
+      await reload();
     });
-    event.currentTarget.reset();
-    await reload();
-    setSaving(null);
   }
 
   async function removeSpecialHours(id: string) {
-    setSaving(id);
-    await deleteAdminSpecialHours(pin, id);
-    await reload();
-    setSaving(null);
+    await runAdminAction(id, async () => {
+      await deleteAdminSpecialHours(pin, id);
+      await reload();
+    });
   }
 
   async function changeAppointmentStatus(id: string, status: string) {
-    setSaving(id);
-    await updateAdminAppointmentStatus(pin, id, status);
-    await reload();
-    setSaving(null);
+    await runAdminAction(id, async () => {
+      await updateAdminAppointmentStatus(pin, id, status);
+      await reload();
+    });
+  }
+
+  async function runAdminAction(actionId: string, action: () => Promise<void>) {
+    setSaving(actionId);
+    setError(null);
+
+    try {
+      await action();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
+    } finally {
+      setSaving(null);
+    }
   }
 
   function patchSummary(partial: Partial<AdminSummary>) {
@@ -641,9 +654,27 @@ export function AdminPage() {
                         )}
                       </div>
                       <div className="status-actions">
-                        <button type="button" onClick={() => changeAppointmentStatus(appointment.id, 'completed')}>Hecho</button>
-                        <button type="button" onClick={() => changeAppointmentStatus(appointment.id, 'cancelled')}>Cancelar</button>
-                        <button type="button" onClick={() => changeAppointmentStatus(appointment.id, 'no_show')}>No vino</button>
+                        <button
+                          type="button"
+                          disabled={saving === appointment.id}
+                          onClick={() => changeAppointmentStatus(appointment.id, 'completed')}
+                        >
+                          {saving === appointment.id ? 'Guardando...' : 'Hecho'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving === appointment.id}
+                          onClick={() => changeAppointmentStatus(appointment.id, 'cancelled')}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving === appointment.id}
+                          onClick={() => changeAppointmentStatus(appointment.id, 'no_show')}
+                        >
+                          No vino
+                        </button>
                       </div>
                     </article>
                   ))}
