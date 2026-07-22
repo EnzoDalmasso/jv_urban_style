@@ -763,7 +763,8 @@ select option {
 
 .editable-row,
 .hours-row,
-.staff-row {
+.staff-row,
+.fixed-row {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
@@ -1017,6 +1018,11 @@ select option {
 
   .hours-row {
     grid-template-columns: 140px 1fr 120px 120px 100px 46px;
+    align-items: end;
+  }
+
+  .fixed-row {
+    grid-template-columns: 1fr 1.2fr 130px 110px 110px 100px 46px 46px;
     align-items: end;
   }
 

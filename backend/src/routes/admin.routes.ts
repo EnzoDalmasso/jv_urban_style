@@ -3,13 +3,16 @@ import {
   getSummary,
   patchAppointmentDeposit,
   patchAppointmentStatus,
+  patchFixedAppointment,
   patchService,
   patchStaff,
   patchSettings,
+  postFixedAppointment,
   postService,
   postStaff,
   postSpecialHours,
   putBusinessHours,
+  removeFixedAppointment,
   removeService,
   removeStaff,
   removeSpecialHours
@@ -31,5 +34,8 @@ adminRouter.delete('/staff/:id', asyncHandler(removeStaff));
 adminRouter.put('/business-hours', asyncHandler(putBusinessHours));
 adminRouter.post('/special-hours', asyncHandler(postSpecialHours));
 adminRouter.delete('/special-hours/:id', asyncHandler(removeSpecialHours));
+adminRouter.post('/fixed-appointments', asyncHandler(postFixedAppointment));
+adminRouter.patch('/fixed-appointments/:id', asyncHandler(patchFixedAppointment));
+adminRouter.delete('/fixed-appointments/:id', asyncHandler(removeFixedAppointment));
 adminRouter.patch('/appointments/:id/deposit', asyncHandler(patchAppointmentDeposit));
 adminRouter.patch('/appointments/:id/status', asyncHandler(patchAppointmentStatus));

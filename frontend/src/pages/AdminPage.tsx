@@ -15,8 +15,10 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrandLogo } from '../components/BrandLogo';
 import {
+  createAdminFixedAppointment,
   createAdminService,
   createAdminStaff,
+  deleteAdminFixedAppointment,
   deleteAdminService,
   deleteAdminStaff,
   deleteAdminSpecialHours,
@@ -25,15 +27,16 @@ import {
   saveAdminSpecialHours,
   updateAdminAppointmentDepositStatus,
   updateAdminAppointmentStatus,
+  updateAdminFixedAppointment,
   updateAdminService,
   updateAdminStaff,
   updateAdminSettings
 } from '../lib/api';
-import type { AdminAppointment, AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '../types';
+import type { AdminAppointment, AdminSummary, BusinessHours, FixedAppointment, Service, ShopSettings, Staff } from '../types';
 
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'upcoming' | 'history';
+type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'fixedAppointments' | 'upcoming' | 'history';
 type SpecialMode = 'hours' | 'closed' | 'vacation';
 
 const defaultOpenPanels: Record<AdminPanelId, boolean> = {
@@ -42,6 +45,7 @@ const defaultOpenPanels: Record<AdminPanelId, boolean> = {
   staff: false,
   hours: false,
   specialHours: false,
+  fixedAppointments: false,
   upcoming: true,
   history: true
 };
@@ -165,9 +169,14 @@ function appointmentDisplayLabel(appointment: AdminAppointment) {
   return appointmentStatusLabel(appointment.status);
 }
 
+function canManageAttendance(appointment: AdminAppointment) {
+  return formatISODate(new Date(appointment.startsAt)) <= todayISO();
+}
+
 type AppointmentCardProps = {
   appointment: AdminAppointment;
   saving: string | null;
+  showAttendanceActions: boolean;
   onChangeStatus: (id: string, status: string) => void;
   onChangeDepositStatus: (id: string, depositStatus: string, whatsappUrl?: string | null) => void;
 };
@@ -175,6 +184,7 @@ type AppointmentCardProps = {
 function AppointmentCard({
   appointment,
   saving,
+  showAttendanceActions,
   onChangeStatus,
   onChangeDepositStatus
 }: AppointmentCardProps) {
@@ -234,13 +244,15 @@ function AppointmentCard({
                 Pedir comprobante
               </a>
             )}
-            <button
-              type="button"
-              disabled={saving === appointment.id}
-              onClick={() => onChangeStatus(appointment.id, 'completed')}
-            >
-              {saving === appointment.id ? 'Guardando...' : 'Hecho'}
-            </button>
+            {showAttendanceActions && (
+              <button
+                type="button"
+                disabled={saving === appointment.id}
+                onClick={() => onChangeStatus(appointment.id, 'completed')}
+              >
+                {saving === appointment.id ? 'Guardando...' : 'Hecho'}
+              </button>
+            )}
             <button
               type="button"
               disabled={saving === appointment.id}
@@ -248,13 +260,15 @@ function AppointmentCard({
             >
               {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
             </button>
-            <button
-              type="button"
-              disabled={saving === appointment.id}
-              onClick={() => onChangeStatus(appointment.id, 'no_show')}
-            >
-              No vino
-            </button>
+            {showAttendanceActions && (
+              <button
+                type="button"
+                disabled={saving === appointment.id}
+                onClick={() => onChangeStatus(appointment.id, 'no_show')}
+              >
+                No vino
+              </button>
+            )}
           </>
         )}
       </div>
@@ -487,6 +501,53 @@ export function AdminPage() {
     });
   }
 
+  async function addFixedAppointment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const staffId = String(formData.get('staffId') || '');
+
+    if (!staffId) {
+      setError('Elegí un profesional para el turno fijo.');
+      return;
+    }
+
+    await runAdminAction('fixed-new', async () => {
+      await createAdminFixedAppointment(pin, {
+        staffId,
+        dayOfWeek: Number(formData.get('dayOfWeek')),
+        startsAt: String(formData.get('startsAt')),
+        durationMinutes: Number(formData.get('durationMinutes')),
+        clientName: String(formData.get('clientName') ?? ''),
+        note: String(formData.get('note') ?? ''),
+        isActive: true
+      });
+      event.currentTarget.reset();
+      await reload();
+    });
+  }
+
+  async function saveFixedAppointment(fixedAppointment: FixedAppointment) {
+    await runAdminAction(fixedAppointment.id, async () => {
+      await updateAdminFixedAppointment(pin, fixedAppointment.id, {
+        staffId: fixedAppointment.staff_id,
+        dayOfWeek: fixedAppointment.day_of_week,
+        startsAt: shortTime(fixedAppointment.starts_at),
+        durationMinutes: Number(fixedAppointment.duration_minutes),
+        clientName: fixedAppointment.client_name,
+        note: fixedAppointment.note ?? '',
+        isActive: Boolean(fixedAppointment.is_active)
+      });
+      await reload();
+    });
+  }
+
+  async function removeFixedAppointment(fixedAppointment: FixedAppointment) {
+    await runAdminAction(fixedAppointment.id, async () => {
+      await deleteAdminFixedAppointment(pin, fixedAppointment.id);
+      await reload();
+    });
+  }
+
   async function changeAppointmentStatus(id: string, status: string) {
     await runAdminAction(id, async () => {
       await updateAdminAppointmentStatus(pin, id, status);
@@ -602,6 +663,162 @@ export function AdminPage() {
 
       {summary && (
         <div className="admin-grid">
+          <section className="admin-panel">
+            <div className="panel-heading collapsible-heading">
+              <button
+                className="panel-toggle-button"
+                type="button"
+                onClick={() => togglePanel('fixedAppointments')}
+                aria-expanded={openPanels.fixedAppointments}
+              >
+                <div>
+                  <p className="eyebrow">Agenda</p>
+                  <h2>Turnos fijos</h2>
+                </div>
+                {openPanels.fixedAppointments ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              </button>
+              <CalendarClock aria-hidden="true" />
+            </div>
+
+            {openPanels.fixedAppointments && (
+              <>
+                <form className="stack-form" onSubmit={addFixedAppointment}>
+                  <label>
+                    Profesional
+                    <select name="staffId" defaultValue="" required>
+                      <option value="">Elegir profesional</option>
+                      {summary.staff.map((staff) => (
+                        <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Cliente
+                    <input name="clientName" placeholder="Nombre del cliente fijo" required minLength={2} />
+                  </label>
+                  <div className="inline-fields">
+                    <label>
+                      Día
+                      <select name="dayOfWeek" defaultValue={1}>
+                        {dayLabels.map((label, index) => (
+                          <option key={label} value={index}>{label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Hora
+                      <input name="startsAt" type="time" defaultValue="10:00" required />
+                    </label>
+                  </div>
+                  <label>
+                    Duración en minutos
+                    <input name="durationMinutes" type="number" min={5} defaultValue={30} required />
+                  </label>
+                  <label>
+                    Nota
+                    <input name="note" placeholder="Opcional" />
+                  </label>
+                  <button className="secondary-button" type="submit" disabled={saving === 'fixed-new'}>
+                    <Plus aria-hidden="true" />
+                    Agregar turno fijo
+                  </button>
+                </form>
+
+                <div className="editable-list fixed-list">
+                  {(summary.fixedAppointments ?? []).length === 0 && (
+                    <p className="muted panel-empty-copy">Sin turnos fijos cargados.</p>
+                  )}
+
+                  {(summary.fixedAppointments ?? []).map((fixedAppointment) => (
+                    <div className="fixed-row" key={fixedAppointment.id}>
+                      <select
+                        value={fixedAppointment.staff_id}
+                        onChange={(event) => patchSummary({
+                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                            item.id === fixedAppointment.id ? { ...item, staff_id: event.target.value } : item
+                          ))
+                        })}
+                      >
+                        {summary.staff.map((staff) => (
+                          <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={fixedAppointment.client_name}
+                        onChange={(event) => patchSummary({
+                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                            item.id === fixedAppointment.id ? { ...item, client_name: event.target.value } : item
+                          ))
+                        })}
+                      />
+                      <select
+                        value={fixedAppointment.day_of_week}
+                        onChange={(event) => patchSummary({
+                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                            item.id === fixedAppointment.id ? { ...item, day_of_week: Number(event.target.value) } : item
+                          ))
+                        })}
+                      >
+                        {dayLabels.map((label, index) => (
+                          <option key={label} value={index}>{label}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="time"
+                        value={shortTime(fixedAppointment.starts_at)}
+                        onChange={(event) => patchSummary({
+                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                            item.id === fixedAppointment.id ? { ...item, starts_at: event.target.value } : item
+                          ))
+                        })}
+                      />
+                      <input
+                        type="number"
+                        min={5}
+                        value={fixedAppointment.duration_minutes}
+                        onChange={(event) => patchSummary({
+                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                            item.id === fixedAppointment.id ? { ...item, duration_minutes: Number(event.target.value) } : item
+                          ))
+                        })}
+                      />
+                      <label className="checkbox-row compact-check">
+                        <input
+                          type="checkbox"
+                          checked={fixedAppointment.is_active}
+                          onChange={(event) => patchSummary({
+                            fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                              item.id === fixedAppointment.id ? { ...item, is_active: event.target.checked } : item
+                            ))
+                          })}
+                        />
+                        Activo
+                      </label>
+                      <button
+                        className="icon-button"
+                        type="button"
+                        onClick={() => saveFixedAppointment(fixedAppointment)}
+                        disabled={saving === fixedAppointment.id}
+                        aria-label="Guardar turno fijo"
+                      >
+                        <Save aria-hidden="true" />
+                      </button>
+                      <button
+                        className="icon-button danger"
+                        type="button"
+                        onClick={() => removeFixedAppointment(fixedAppointment)}
+                        disabled={saving === fixedAppointment.id}
+                        aria-label="Quitar turno fijo"
+                      >
+                        <Minus aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+
           <section className="admin-panel">
             <div className="panel-heading collapsible-heading">
               <button
@@ -1111,6 +1328,7 @@ export function AdminPage() {
                               appointment={appointment}
                               key={appointment.id}
                               saving={saving}
+                              showAttendanceActions={false}
                               onChangeStatus={changeAppointmentStatus}
                               onChangeDepositStatus={changeDepositStatus}
                             />
@@ -1172,6 +1390,7 @@ export function AdminPage() {
                       appointment={appointment}
                       key={appointment.id}
                       saving={saving}
+                      showAttendanceActions={canManageAttendance(appointment)}
                       onChangeStatus={changeAppointmentStatus}
                       onChangeDepositStatus={changeDepositStatus}
                     />

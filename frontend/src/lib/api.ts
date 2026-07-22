@@ -181,6 +181,42 @@ export async function deleteAdminSpecialHours(pin: string, id: string) {
   });
 }
 
+export async function createAdminFixedAppointment(pin: string, payload: {
+  staffId: string;
+  dayOfWeek: number;
+  startsAt: string;
+  durationMinutes: number;
+  clientName: string;
+  note?: string | null;
+  isActive?: boolean;
+}) {
+  return adminFetch('/api/admin/fixed-appointments', pin, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateAdminFixedAppointment(pin: string, id: string, payload: {
+  staffId?: string;
+  dayOfWeek?: number;
+  startsAt?: string;
+  durationMinutes?: number;
+  clientName?: string;
+  note?: string | null;
+  isActive?: boolean;
+}) {
+  return adminFetch(`/api/admin/fixed-appointments/${id}`, pin, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteAdminFixedAppointment(pin: string, id: string) {
+  return adminFetch(`/api/admin/fixed-appointments/${id}`, pin, {
+    method: 'DELETE'
+  });
+}
+
 export async function updateAdminAppointmentStatus(pin: string, id: string, status: string) {
   return adminFetch(`/api/admin/appointments/${id}/status`, pin, {
     method: 'PATCH',

@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import {
   demoAppointments,
   demoBusinessHours,
+  demoFixedAppointments,
   demoServices,
   demoSettings,
   demoSpecialBusinessHours,
@@ -71,6 +72,26 @@ export const saveSpecialHoursSchema = z.object({
   reason: z.string().trim().optional().nullable()
 });
 
+export const createFixedAppointmentSchema = z.object({
+  staffId: z.string().uuid(),
+  dayOfWeek: z.coerce.number().int().min(0).max(6),
+  startsAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
+  durationMinutes: z.coerce.number().int().positive().default(30),
+  clientName: z.string().trim().min(2),
+  note: z.string().trim().optional().nullable(),
+  isActive: z.boolean().optional()
+});
+
+export const updateFixedAppointmentSchema = z.object({
+  staffId: z.string().uuid().optional(),
+  dayOfWeek: z.coerce.number().int().min(0).max(6).optional(),
+  startsAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
+  durationMinutes: z.coerce.number().int().positive().optional(),
+  clientName: z.string().trim().min(2).optional(),
+  note: z.string().trim().optional().nullable(),
+  isActive: z.boolean().optional()
+});
+
 export const updateAppointmentStatusSchema = z.object({
   status: z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no_show'])
 });
@@ -89,22 +110,42 @@ export async function getAdminSummary(date: string) {
       staff: demoStaff,
       businessHours: demoBusinessHours,
       specialHours: demoSpecialBusinessHours.filter((item) => item.date === safeDate),
+      fixedAppointments: demoFixedAppointments,
       appointments: demoAppointments,
       upcomingAppointments: []
     };
   }
 
-  const [settings, services, staff, businessHours, specialHours, appointments, upcomingAppointments] = await Promise.all([
+  const [
+    settings,
+    services,
+    staff,
+    businessHours,
+    specialHours,
+    fixedAppointments,
+    appointments,
+    upcomingAppointments
+  ] = await Promise.all([
     getShopSettings(),
     getServicesForAdmin(),
     getStaffForAdmin(),
     getBusinessHoursForAdmin(),
     getSpecialHoursForAdmin(safeDate),
+    getFixedAppointmentsForAdmin(),
     getAppointmentsForAdmin(safeDate),
     getUpcomingAppointmentsForAdmin(safeDate)
   ]);
 
-  return { settings, services, staff, businessHours, specialHours, appointments, upcomingAppointments };
+  return {
+    settings,
+    services,
+    staff,
+    businessHours,
+    specialHours,
+    fixedAppointments,
+    appointments,
+    upcomingAppointments
+  };
 }
 
 export async function updateSettings(input: z.infer<typeof updateSettingsSchema>) {
@@ -456,6 +497,109 @@ export async function deleteSpecialHours(id: string) {
   return { deleted: true };
 }
 
+export async function createFixedAppointment(input: z.infer<typeof createFixedAppointmentSchema>) {
+  const parsed = createFixedAppointmentSchema.parse(input);
+  const payload = {
+    staff_id: parsed.staffId,
+    day_of_week: parsed.dayOfWeek,
+    starts_at: normalizeTime(parsed.startsAt),
+    duration_minutes: parsed.durationMinutes,
+    client_name: parsed.clientName,
+    note: parsed.note || null,
+    is_active: parsed.isActive ?? true
+  };
+
+  if (!supabase) {
+    const next = { id: randomUUID(), ...payload };
+    demoFixedAppointments.push(next);
+    return next;
+  }
+
+  const { data, error } = await supabase
+    .from('fixed_appointments')
+    .insert(payload)
+    .select('id, staff_id, day_of_week, starts_at, duration_minutes, client_name, note, is_active')
+    .single();
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      throw new HttpError(409, 'Falta ejecutar la migracion SQL de turnos fijos en Supabase.', error);
+    }
+
+    throw new HttpError(502, 'No se pudo crear el turno fijo.', error);
+  }
+
+  return data;
+}
+
+export async function updateFixedAppointment(id: string, input: z.infer<typeof updateFixedAppointmentSchema>) {
+  const safeId = z.string().uuid().parse(id);
+  const parsed = updateFixedAppointmentSchema.parse(input);
+  const payload = removeUndefined({
+    staff_id: parsed.staffId,
+    day_of_week: parsed.dayOfWeek,
+    starts_at: parsed.startsAt ? normalizeTime(parsed.startsAt) : undefined,
+    duration_minutes: parsed.durationMinutes,
+    client_name: parsed.clientName,
+    note: parsed.note,
+    is_active: parsed.isActive
+  });
+
+  if (!supabase) {
+    const fixedAppointment = demoFixedAppointments.find((item) => item.id === safeId);
+    if (!fixedAppointment) {
+      throw new HttpError(404, 'Turno fijo no encontrado.');
+    }
+
+    Object.assign(fixedAppointment, payload);
+    return fixedAppointment;
+  }
+
+  const { data, error } = await supabase
+    .from('fixed_appointments')
+    .update(payload)
+    .eq('id', safeId)
+    .select('id, staff_id, day_of_week, starts_at, duration_minutes, client_name, note, is_active')
+    .single();
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      throw new HttpError(409, 'Falta ejecutar la migracion SQL de turnos fijos en Supabase.', error);
+    }
+
+    throw new HttpError(502, 'No se pudo guardar el turno fijo.', error);
+  }
+
+  return data;
+}
+
+export async function deleteFixedAppointment(id: string) {
+  const safeId = z.string().uuid().parse(id);
+
+  if (!supabase) {
+    const index = demoFixedAppointments.findIndex((item) => item.id === safeId);
+    if (index >= 0) {
+      demoFixedAppointments.splice(index, 1);
+    }
+    return { deleted: true };
+  }
+
+  const { error } = await supabase
+    .from('fixed_appointments')
+    .delete()
+    .eq('id', safeId);
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      throw new HttpError(409, 'Falta ejecutar la migracion SQL de turnos fijos en Supabase.', error);
+    }
+
+    throw new HttpError(502, 'No se pudo quitar el turno fijo.', error);
+  }
+
+  return { deleted: true };
+}
+
 export async function updateAppointmentStatus(id: string, input: z.infer<typeof updateAppointmentStatusSchema>) {
   const safeId = z.string().uuid().parse(id);
   const parsed = updateAppointmentStatusSchema.parse(input);
@@ -576,6 +720,28 @@ async function getSpecialHoursForAdmin(date: string) {
     }
 
     throw new HttpError(502, 'No se pudieron obtener horarios especiales.', error);
+  }
+
+  return data ?? [];
+}
+
+async function getFixedAppointmentsForAdmin() {
+  if (!supabase) {
+    return demoFixedAppointments;
+  }
+
+  const { data, error } = await supabase
+    .from('fixed_appointments')
+    .select('id, staff_id, day_of_week, starts_at, duration_minutes, client_name, note, is_active')
+    .order('day_of_week', { ascending: true })
+    .order('starts_at', { ascending: true });
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return [];
+    }
+
+    throw new HttpError(502, 'No se pudieron obtener los turnos fijos.', error);
   }
 
   return data ?? [];

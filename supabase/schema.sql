@@ -98,6 +98,19 @@ create table if not exists public.time_off (
   constraint time_off_valid_range check (starts_at < ends_at)
 );
 
+create table if not exists public.fixed_appointments (
+  id uuid primary key default gen_random_uuid(),
+  staff_id uuid not null references public.staff(id) on delete cascade,
+  day_of_week smallint not null check (day_of_week between 0 and 6),
+  starts_at time not null,
+  duration_minutes integer not null check (duration_minutes > 0),
+  client_name text not null,
+  note text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.appointments (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients(id) on delete restrict,
@@ -166,6 +179,14 @@ create index if not exists appointments_day_lookup_idx
 create index if not exists time_off_staff_time_idx
   on public.time_off (staff_id, starts_at, ends_at);
 
+create index if not exists fixed_appointments_lookup_idx
+  on public.fixed_appointments (staff_id, day_of_week, starts_at)
+  where is_active = true;
+
+create unique index if not exists fixed_appointments_staff_day_start_unique_idx
+  on public.fixed_appointments (staff_id, day_of_week, starts_at)
+  where is_active = true;
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -191,6 +212,11 @@ create trigger special_business_hours_set_updated_at
 before update on public.special_business_hours
 for each row execute function public.set_updated_at();
 
+drop trigger if exists fixed_appointments_set_updated_at on public.fixed_appointments;
+create trigger fixed_appointments_set_updated_at
+before update on public.fixed_appointments
+for each row execute function public.set_updated_at();
+
 insert into public.shop_settings (id)
 values (true)
 on conflict (id) do nothing;
@@ -203,6 +229,7 @@ alter table public.shop_settings enable row level security;
 alter table public.business_hours enable row level security;
 alter table public.special_business_hours enable row level security;
 alter table public.time_off enable row level security;
+alter table public.fixed_appointments enable row level security;
 alter table public.appointments enable row level security;
 alter table public.appointment_services enable row level security;
 
@@ -235,6 +262,12 @@ create policy "Public can read special business hours"
 on public.special_business_hours for select
 to anon, authenticated
 using (true);
+
+drop policy if exists "Public can read active fixed appointments" on public.fixed_appointments;
+create policy "Public can read active fixed appointments"
+on public.fixed_appointments for select
+to anon, authenticated
+using (is_active = true);
 
 -- Reservas, clientes, bloqueos y dashboard deben escribirse/consultarse via backend
 -- usando SUPABASE_SERVICE_ROLE_KEY. La service role bypassa RLS.

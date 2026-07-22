@@ -62,6 +62,17 @@ export type SpecialHours = {
   reason: string | null;
 };
 
+export type FixedAppointment = {
+  id: string;
+  staff_id: string;
+  day_of_week: number;
+  starts_at: string;
+  duration_minutes: number;
+  client_name: string;
+  note: string | null;
+  is_active: boolean;
+};
+
 export type AdminAppointment = {
   id: string;
   publicCode: string;
@@ -91,6 +102,7 @@ export type AdminSummary = {
   staff: Staff[];
   businessHours: BusinessHours[];
   specialHours: SpecialHours[];
+  fixedAppointments: FixedAppointment[];
   appointments: AdminAppointment[];
   upcomingAppointments: AdminAppointment[];
 };

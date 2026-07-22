@@ -84,4 +84,15 @@ export const demoSpecialBusinessHours: Array<{
   reason: string | null;
 }> = [];
 
+export const demoFixedAppointments: Array<{
+  id: string;
+  staff_id: string;
+  day_of_week: number;
+  starts_at: string;
+  duration_minutes: number;
+  client_name: string;
+  note: string | null;
+  is_active: boolean;
+}> = [];
+
 export const demoAppointments: unknown[] = [];

@@ -37,7 +37,7 @@ export function BookingPage() {
     alias: 'JVURBANSTYLE',
     cbu: 'Configurar en admin'
   };
-  const proofWhatsappUrl = confirmation
+  const proofWhatsappUrl = confirmation?.depositRequired
     ? buildWhatsappUrl(
         confirmation.businessWhatsappPhone,
         'Hola JV Urban Style, ya reservé mi turno. Envío el comprobante de la seña.'
@@ -195,7 +195,8 @@ export function BookingPage() {
               {confirmation.depositRequired && (
                 <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
-              <div className="transfer-details">
+              {confirmation.depositRequired ? (
+                <div className="transfer-details">
                 <strong>Datos para transferir</strong>
                 <dl>
                   <div>
@@ -222,6 +223,15 @@ export function BookingPage() {
                   Hacer otra reserva
                 </button>
               </div>
+              ) : (
+                <div className="transfer-details">
+                  <strong>Turno confirmado</strong>
+                  <p>No hace falta enviar seña para esta reserva.</p>
+                  <button className="secondary-button" type="button" onClick={startNewBooking}>
+                    Hacer otra reserva
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <form className="stack-form" onSubmit={handleSubmit}>

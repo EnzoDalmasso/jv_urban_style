@@ -57,6 +57,13 @@ type BusyRow = {
   deposit_status?: string | null;
 };
 
+type FixedAppointmentRow = {
+  staff_id: string;
+  day_of_week: number;
+  starts_at: string;
+  duration_minutes: number;
+};
+
 type BusyInterval = {
   interval: Interval;
   reason: 'Pendiente de comprobante' | 'Reservado' | 'No disponible';
@@ -115,11 +122,12 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
   }
 
   const staffIds = staff.map((person) => person.id);
-  const [weeklyHours, specialHours, appointments, timeOff] = await Promise.all([
+  const [weeklyHours, specialHours, appointments, timeOff, fixedAppointments] = await Promise.all([
     getBusinessHours(dayOfWeek, staffIds),
     getSpecialBusinessHours(input.date, staffIds),
     getAppointments(dayStartUtc.toISO(), dayEndUtc.toISO(), staffIds),
-    getTimeOff(dayStartUtc.toISO(), dayEndUtc.toISO(), staffIds)
+    getTimeOff(dayStartUtc.toISO(), dayEndUtc.toISO(), staffIds),
+    getFixedAppointments(dayOfWeek, staffIds)
   ]);
 
   const slots = staff.flatMap((person) => {
@@ -134,7 +142,10 @@ export async function calculateAvailability(input: CalculateAvailabilityInput) {
     const closesAt = localTimeToDateTime(input.date, workingHours.closes_at, personZone);
     const busyIntervals = toBusyIntervals({
       appointments: appointments.filter((item) => item.staff_id === person.id),
-      timeOff: timeOff.filter((item) => item.staff_id === person.id)
+      timeOff: timeOff.filter((item) => item.staff_id === person.id),
+      fixedAppointments: fixedAppointments.filter((item) => item.staff_id === person.id),
+      date: input.date,
+      zone: personZone
     });
 
     return buildSlots({
@@ -387,6 +398,30 @@ async function getTimeOff(dayStartIso: string | null, dayEndIso: string | null, 
   return data ?? [];
 }
 
+async function getFixedAppointments(dayOfWeek: number, staffIds: string[]) {
+  if (!supabase) {
+    throw new HttpError(500, 'Supabase no esta configurado.');
+  }
+
+  const { data, error } = await supabase
+    .from('fixed_appointments')
+    .select('staff_id, day_of_week, starts_at, duration_minutes')
+    .eq('day_of_week', dayOfWeek)
+    .eq('is_active', true)
+    .in('staff_id', staffIds)
+    .returns<FixedAppointmentRow[]>();
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return [];
+    }
+
+    throw new HttpError(502, 'No se pudieron obtener los turnos fijos.', error);
+  }
+
+  return data ?? [];
+}
+
 function pickWorkingHours(
   weeklyHours: BusinessHoursRow[],
   specialHours: SpecialBusinessHoursRow[],
@@ -408,7 +443,13 @@ function localTimeToDateTime(date: string, time: string, zone: string) {
   return DateTime.fromISO(`${date}T${cleanTime}`, { zone });
 }
 
-function toBusyIntervals(rows: { appointments: BusyRow[]; timeOff: BusyRow[] }) {
+function toBusyIntervals(rows: {
+  appointments: BusyRow[];
+  timeOff: BusyRow[];
+  fixedAppointments: FixedAppointmentRow[];
+  date: string;
+  zone: string;
+}) {
   const appointmentIntervals = rows.appointments.map((row) => ({
     interval: Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)),
     reason: row.status === 'pending' || row.deposit_status === 'pending'
@@ -421,7 +462,15 @@ function toBusyIntervals(rows: { appointments: BusyRow[]; timeOff: BusyRow[] }) 
     reason: 'No disponible' as const
   }));
 
-  return [...appointmentIntervals, ...timeOffIntervals]
+  const fixedAppointmentIntervals = rows.fixedAppointments.map((row) => {
+    const start = localTimeToDateTime(rows.date, row.starts_at, rows.zone);
+    return {
+      interval: Interval.fromDateTimes(start.toUTC(), start.plus({ minutes: row.duration_minutes }).toUTC()),
+      reason: 'Reservado' as const
+    };
+  });
+
+  return [...appointmentIntervals, ...timeOffIntervals, ...fixedAppointmentIntervals]
     .filter((item) => item.interval.isValid);
 }
 

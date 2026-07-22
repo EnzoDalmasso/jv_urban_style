@@ -1,16 +1,19 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
+  createFixedAppointment,
   createService,
   createStaff,
   deactivateService,
   deactivateStaff,
+  deleteFixedAppointment,
   deleteSpecialHours,
   getAdminSummary,
   saveBusinessHours,
   saveSpecialHours,
   updateAppointmentDeposit,
   updateAppointmentStatus,
+  updateFixedAppointment,
   updateService,
   updateStaff,
   updateSettings
@@ -77,6 +80,23 @@ export async function postSpecialHours(req: Request, res: Response) {
 export async function removeSpecialHours(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const result = await deleteSpecialHours(params.id);
+  res.json(result);
+}
+
+export async function postFixedAppointment(req: Request, res: Response) {
+  const fixedAppointment = await createFixedAppointment(req.body);
+  res.status(201).json({ fixedAppointment });
+}
+
+export async function patchFixedAppointment(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const fixedAppointment = await updateFixedAppointment(params.id, req.body);
+  res.json({ fixedAppointment });
+}
+
+export async function removeFixedAppointment(req: Request, res: Response) {
+  const params = z.object({ id: z.string().uuid() }).parse(req.params);
+  const result = await deleteFixedAppointment(params.id);
   res.json(result);
 }
 
