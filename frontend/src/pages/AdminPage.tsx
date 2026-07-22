@@ -29,7 +29,7 @@ import {
   updateAdminStaff,
   updateAdminSettings
 } from '../lib/api';
-import type { AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '../types';
+import type { AdminAppointment, AdminSummary, BusinessHours, Service, ShopSettings, Staff } from '../types';
 
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -140,12 +140,28 @@ function appointmentStatusLabel(status: string) {
   const labels: Record<string, string> = {
     pending: 'Pendiente de comprobante',
     confirmed: 'Reservado',
-    cancelled: 'Cancelado',
-    completed: 'Hecho',
+    cancelled: 'Rechazado',
+    completed: 'Corte realizado',
     no_show: 'No vino'
   };
 
   return labels[status] ?? status;
+}
+
+function isTerminalAppointment(status: string) {
+  return ['cancelled', 'completed', 'no_show'].includes(status);
+}
+
+function appointmentDisplayLabel(appointment: AdminAppointment) {
+  if (isTerminalAppointment(appointment.status)) {
+    return appointmentStatusLabel(appointment.status);
+  }
+
+  if (appointment.depositRequired && appointment.depositStatus === 'pending') {
+    return 'Pendiente de comprobante';
+  }
+
+  return appointmentStatusLabel(appointment.status);
 }
 
 export function AdminPage() {
@@ -977,6 +993,8 @@ export function AdminPage() {
                     const appointmentDate = new Date(appointment.startsAt).toLocaleDateString('es-AR');
                     const appointmentTime = formatAppointmentTime(appointment.startsAt);
                     const servicesText = appointment.services.map((service) => service.name).join(', ');
+                    const isTerminal = isTerminalAppointment(appointment.status);
+                    const displayStatus = appointmentDisplayLabel(appointment);
                     const pendingProofUrl = buildWhatsappUrl(
                       appointment.clientPhone,
                       `Hola ${appointment.clientName}, recibimos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Queda pendiente el comprobante de la seña.`
@@ -997,17 +1015,19 @@ export function AdminPage() {
                       <div>
                         <span>Corte: {servicesText}</span>
                         <small>
-                          {formatPrice(appointment.totalPrice)} - {
-                            appointment.depositRequired && appointment.depositStatus === 'pending'
-                              ? 'Pendiente de comprobante'
-                              : appointmentStatusLabel(appointment.status)
-                          }
+                          {formatPrice(appointment.totalPrice)} - {displayStatus}
                         </small>
                         {appointment.depositRequired && (
                           <small>Seña: {formatPrice(appointment.depositAmount)} ({depositLabel(appointment.depositStatus)})</small>
                         )}
                       </div>
                       <div className="status-actions">
+                        {isTerminal ? (
+                          <span className={`status-badge status-${appointment.status}`}>
+                            {displayStatus}
+                          </span>
+                        ) : (
+                          <>
                         {appointment.depositRequired && (
                           <button
                             type="button"
@@ -1047,6 +1067,8 @@ export function AdminPage() {
                         >
                           No vino
                         </button>
+                          </>
+                        )}
                       </div>
                     </article>
                     );

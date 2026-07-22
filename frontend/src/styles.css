@@ -903,6 +903,35 @@ select option {
   text-align: center;
 }
 
+.status-badge {
+  min-height: 38px;
+  display: inline-grid;
+  place-items: center;
+  grid-column: 1 / -1;
+  padding: 0 12px;
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6f1e7;
+  font-weight: 850;
+  text-align: center;
+}
+
+.status-cancelled {
+  border-color: rgba(255, 143, 143, 0.36);
+  color: #ffb4b4;
+}
+
+.status-completed {
+  border-color: rgba(66, 244, 200, 0.36);
+  color: #42f4c8;
+}
+
+.status-no_show {
+  border-color: rgba(215, 178, 93, 0.36);
+  color: #d7b25d;
+}
+
 .proof-link {
   margin-top: 2px;
 }

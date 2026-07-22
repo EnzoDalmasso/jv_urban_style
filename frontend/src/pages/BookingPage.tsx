@@ -31,6 +31,7 @@ export function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
+  const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
   const transferDetails = confirmation?.transfer ?? {
     holder: 'JV Urban Style Barberia',
     alias: 'JVURBANSTYLE',
@@ -57,6 +58,18 @@ export function BookingPage() {
         ? current.filter((id) => id !== serviceId)
         : [...current, serviceId]
     ));
+  }
+
+  function selectSlot(slot: AvailabilitySlot | undefined) {
+    setSelectedSlot(slot);
+    setConfirmation(null);
+    setError(null);
+  }
+
+  function startNewBooking() {
+    setSelectedSlot(undefined);
+    setConfirmation(null);
+    setError(null);
   }
 
   function scrollToBooking() {
@@ -96,6 +109,7 @@ export function BookingPage() {
 
       setConfirmation(response.appointment);
       setSelectedSlot(undefined);
+      setAvailabilityRefreshToken((current) => current + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pudimos crear el turno.');
     } finally {
@@ -165,7 +179,8 @@ export function BookingPage() {
         <DateTimeSelector
           serviceIds={selectedServiceIds}
           selectedSlot={selectedSlot}
-          onSelectSlot={setSelectedSlot}
+          onSelectSlot={selectSlot}
+          refreshToken={availabilityRefreshToken}
         />
 
         <aside className="summary-panel" aria-label="Resumen de reserva">
@@ -203,6 +218,9 @@ export function BookingPage() {
                 ) : (
                   <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
                 )}
+                <button className="secondary-button" type="button" onClick={startNewBooking}>
+                  Hacer otra reserva
+                </button>
               </div>
             </div>
           ) : (

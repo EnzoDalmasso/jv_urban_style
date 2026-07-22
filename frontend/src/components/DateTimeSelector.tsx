@@ -7,6 +7,7 @@ type DateTimeSelectorProps = {
   serviceIds: string[];
   selectedSlot?: AvailabilitySlot;
   onSelectSlot: (slot: AvailabilitySlot | undefined) => void;
+  refreshToken?: number;
 };
 
 const weekdayLabels = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
@@ -58,7 +59,8 @@ function formatSelectedDate(value: string) {
 export function DateTimeSelector({
   serviceIds,
   selectedSlot,
-  onSelectSlot
+  onSelectSlot,
+  refreshToken = 0
 }: DateTimeSelectorProps) {
   const today = useMemo(() => new Date(), []);
   const todayISO = useMemo(() => toISODate(today), [today]);
@@ -96,7 +98,7 @@ export function DateTimeSelector({
       });
 
     return () => controller.abort();
-  }, [selectedDate, serviceIds]);
+  }, [selectedDate, serviceIds, refreshToken]);
 
   function moveMonth(delta: number) {
     setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
