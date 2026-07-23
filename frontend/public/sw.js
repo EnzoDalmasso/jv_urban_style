@@ -1,9 +1,12 @@
-const CACHE_NAME = 'jv-urban-style-v1';
+const CACHE_NAME = 'jv-urban-style-v2';
 const STATIC_ASSETS = [
   '/',
+  '/admin',
   '/manifest.webmanifest',
+  '/admin-manifest.webmanifest',
   '/favicon.svg',
-  '/pwa-icon.svg'
+  '/pwa-icon.svg',
+  '/pwa-icon-192.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -66,6 +69,39 @@ self.addEventListener('fetch', (event) => {
 
         return response;
       });
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  const payload = event.data?.json() ?? {};
+  const title = payload.title || 'JV Urban Style';
+  const options = {
+    body: payload.body || 'Tenés una novedad en la agenda.',
+    icon: '/pwa-icon-192.png',
+    badge: '/pwa-icon-192.png',
+    tag: payload.tag || 'jv-urban-style',
+    data: {
+      url: payload.url || '/admin'
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/admin';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client && client.url.includes(url)) {
+          return client.focus();
+        }
+      }
+
+      return clients.openWindow(url);
     })
   );
 });

@@ -6,6 +6,7 @@ import { calculateAvailability, getActiveServicesByIds } from './availability.se
 import { defaultSettings, getShopSettings } from './settings.service.js';
 import { HttpError } from '../utils/httpError.js';
 import { isMissingSchemaError } from '../utils/supabaseError.js';
+import { sendNewAppointmentPush } from './push.service.js';
 
 const createAppointmentSchema = z.object({
   serviceIds: z.array(z.string().uuid()).min(1),
@@ -153,6 +154,15 @@ export async function createAppointment(rawInput: unknown) {
     await supabase.from('appointments').delete().eq('id', appointment.id);
     throw new HttpError(502, 'No se pudieron asociar los servicios al turno.', appointmentServicesError);
   }
+
+  sendNewAppointmentPush({
+    clientName: `${input.client.firstName} ${input.client.lastName}`.trim(),
+    startsAt: appointment.starts_at,
+    services,
+    depositRequired
+  }).catch((error) => {
+    console.warn('No se pudo enviar la notificacion push de nuevo turno.', error);
+  });
 
   return {
     appointment: {

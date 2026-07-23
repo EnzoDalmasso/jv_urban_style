@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getSummary,
+  getPushConfig,
   patchAppointmentDeposit,
   patchAppointmentStatus,
   patchFixedAppointment,
@@ -8,6 +9,7 @@ import {
   patchStaff,
   patchSettings,
   postFixedAppointment,
+  postPushSubscription,
   postService,
   postStaff,
   postSpecialHours,
@@ -24,6 +26,8 @@ export const adminRouter = Router();
 
 adminRouter.use(requireAdmin);
 adminRouter.get('/summary', asyncHandler(getSummary));
+adminRouter.get('/push-config', asyncHandler(getPushConfig));
+adminRouter.post('/push-subscriptions', asyncHandler(postPushSubscription));
 adminRouter.patch('/settings', asyncHandler(patchSettings));
 adminRouter.post('/services', asyncHandler(postService));
 adminRouter.patch('/services/:id', asyncHandler(patchService));

@@ -27,7 +27,10 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   BUSINESS_TIMEZONE: z.string().default('America/Argentina/Buenos_Aires'),
-  SLOT_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15)
+  SLOT_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15),
+  WEB_PUSH_PUBLIC_KEY: z.string().min(1).optional(),
+  WEB_PUSH_PRIVATE_KEY: z.string().min(1).optional(),
+  WEB_PUSH_SUBJECT: z.string().default('mailto:admin@jvurbanstyle.local')
 });
 
 const parsedEnv = envSchema.parse(process.env);

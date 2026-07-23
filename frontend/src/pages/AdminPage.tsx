@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Bell,
   LogOut,
   Minus,
   Plus,
@@ -23,8 +24,10 @@ import {
   deleteAdminStaff,
   deleteAdminSpecialHours,
   fetchAdminSummary,
+  fetchAdminPushConfig,
   saveAdminBusinessHours,
   saveAdminSpecialHours,
+  saveAdminPushSubscription,
   updateAdminAppointmentDepositStatus,
   updateAdminAppointmentStatus,
   updateAdminFixedAppointment,
@@ -38,6 +41,7 @@ const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Vierne
 
 type AdminPanelId = 'payments' | 'services' | 'staff' | 'hours' | 'specialHours' | 'fixedAppointments' | 'upcoming' | 'history';
 type SpecialMode = 'hours' | 'closed' | 'vacation';
+type PushStatus = 'idle' | 'saving' | 'enabled' | 'unsupported' | 'blocked' | 'needs_config' | 'error';
 
 const defaultOpenPanels: Record<AdminPanelId, boolean> = {
   payments: false,
@@ -121,6 +125,19 @@ function buildWhatsappUrl(phone: string | undefined, message: string) {
   }
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = '='.repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
 }
 
 function formatAppointmentTime(startsAt: string) {
@@ -305,6 +322,7 @@ export function AdminPage() {
   const [openStaffHistory, setOpenStaffHistory] = useState<Record<string, boolean>>({});
   const [openStaffUpcoming, setOpenStaffUpcoming] = useState<Record<string, boolean>>({});
   const [specialMode, setSpecialMode] = useState<SpecialMode>('hours');
+  const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
 
   useEffect(() => {
     if (!pin) {
@@ -600,6 +618,44 @@ export function AdminPage() {
     }
   }
 
+  async function enablePushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setPushStatus('unsupported');
+      return;
+    }
+
+    setPushStatus('saving');
+
+    try {
+      const config = await fetchAdminPushConfig(pin);
+
+      if (!config.enabled || !config.publicKey) {
+        setPushStatus('needs_config');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== 'granted') {
+        setPushStatus('blocked');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription()
+        ?? await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(config.publicKey)
+        });
+
+      await saveAdminPushSubscription(pin, subscription.toJSON());
+      setPushStatus('enabled');
+    } catch (err) {
+      console.error(err);
+      setPushStatus('error');
+    }
+  }
+
   async function runAdminAction(actionId: string, action: () => Promise<void>) {
     setSaving(actionId);
     setError(null);
@@ -656,11 +712,30 @@ export function AdminPage() {
             <h1>Panel de agenda</h1>
           </div>
         </div>
-        <button className="icon-text-button" type="button" onClick={logout}>
-          <LogOut aria-hidden="true" />
-          Salir
-        </button>
+        <div className="admin-header-actions">
+          <button className="icon-text-button" type="button" onClick={enablePushNotifications} disabled={pushStatus === 'saving'}>
+            <Bell aria-hidden="true" />
+            {pushStatus === 'enabled' ? 'Notificaciones activas' : 'Activar notificaciones'}
+          </button>
+          <button className="icon-text-button" type="button" onClick={logout}>
+            <LogOut aria-hidden="true" />
+            Salir
+          </button>
+        </div>
       </header>
+
+      {pushStatus === 'needs_config' && (
+        <p className="error-text">Faltan configurar las claves WEB_PUSH en Render.</p>
+      )}
+      {pushStatus === 'blocked' && (
+        <p className="error-text">El navegador bloqueó las notificaciones. Activarlas desde permisos del sitio.</p>
+      )}
+      {pushStatus === 'unsupported' && (
+        <p className="error-text">Este navegador no soporta notificaciones push PWA.</p>
+      )}
+      {pushStatus === 'error' && (
+        <p className="error-text">No se pudieron activar las notificaciones.</p>
+      )}
 
       <section className="admin-toolbar">
         <label>

@@ -675,6 +675,13 @@ select option {
   gap: 14px;
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .admin-toolbar {
   flex-wrap: wrap;
   gap: 12px;

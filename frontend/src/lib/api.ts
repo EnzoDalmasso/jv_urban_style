@@ -242,6 +242,17 @@ export async function updateAdminAppointmentDepositStatus(pin: string, id: strin
   });
 }
 
+export async function fetchAdminPushConfig(pin: string) {
+  return adminFetch<{ publicKey: string; enabled: boolean }>('/api/admin/push-config', pin);
+}
+
+export async function saveAdminPushSubscription(pin: string, subscription: PushSubscriptionJSON) {
+  return adminFetch('/api/admin/push-subscriptions', pin, {
+    method: 'POST',
+    body: JSON.stringify(subscription)
+  });
+}
+
 async function adminFetch<T = unknown>(path: string, pin: string, init?: RequestInit) {
   let response: Response;
 

@@ -147,6 +147,17 @@ create table if not exists public.appointment_services (
   primary key (appointment_id, service_id)
 );
 
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+
 create index if not exists services_active_sort_idx
   on public.services (is_active, sort_order, name);
 
@@ -217,6 +228,11 @@ create trigger fixed_appointments_set_updated_at
 before update on public.fixed_appointments
 for each row execute function public.set_updated_at();
 
+drop trigger if exists push_subscriptions_set_updated_at on public.push_subscriptions;
+create trigger push_subscriptions_set_updated_at
+before update on public.push_subscriptions
+for each row execute function public.set_updated_at();
+
 insert into public.shop_settings (id)
 values (true)
 on conflict (id) do nothing;
@@ -232,6 +248,7 @@ alter table public.time_off enable row level security;
 alter table public.fixed_appointments enable row level security;
 alter table public.appointments enable row level security;
 alter table public.appointment_services enable row level security;
+alter table public.push_subscriptions enable row level security;
 
 drop policy if exists "Public can read active services" on public.services;
 create policy "Public can read active services"

@@ -18,6 +18,7 @@ import {
   updateStaff,
   updateSettings
 } from '../services/admin.service.js';
+import { getPushPublicConfig, savePushSubscription } from '../services/push.service.js';
 
 export async function getSummary(req: Request, res: Response) {
   const query = z.object({
@@ -110,4 +111,13 @@ export async function patchAppointmentDeposit(req: Request, res: Response) {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const appointment = await updateAppointmentDeposit(params.id, req.body);
   res.json({ appointment });
+}
+
+export async function getPushConfig(_req: Request, res: Response) {
+  res.json(getPushPublicConfig());
+}
+
+export async function postPushSubscription(req: Request, res: Response) {
+  const result = await savePushSubscription(req.body, req.header('user-agent'));
+  res.status(201).json(result);
 }
