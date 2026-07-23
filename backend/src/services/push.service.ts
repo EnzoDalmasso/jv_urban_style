@@ -178,7 +178,11 @@ async function sendPushToSavedDevices(payloadInput: PushPayload, directSubscript
     const row = subscriptions[index];
     const error = result.reason;
 
-    if ('id' in row && (error?.statusCode === 404 || error?.statusCode === 410)) {
+    const shouldDeleteSubscription = error?.statusCode === 404
+      || error?.statusCode === 410
+      || (error?.statusCode === 403 && String(error?.body ?? '').includes('BadJwtToken'));
+
+    if ('id' in row && shouldDeleteSubscription) {
       await supabaseClient.from('push_subscriptions').delete().eq('id', row.id);
     } else {
       console.warn('No se pudo enviar notificacion push.', error);
