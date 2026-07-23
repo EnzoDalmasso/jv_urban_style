@@ -1149,13 +1149,22 @@ select option {
 
 .nav-action {
   min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 0 16px;
   border: 1px solid #d7b25d;
   border-radius: 4px;
-  background: #d7b25d;
-  color: #11100d;
+  background: rgba(215, 178, 93, 0.1);
+  color: #d7b25d;
   cursor: pointer;
   font-weight: 900;
+}
+
+.nav-action svg {
+  width: 18px;
+  height: 18px;
 }
 
 .client-shell .brand-logo.compact {
@@ -1256,6 +1265,64 @@ select option {
   color: rgba(246, 241, 231, 0.82);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.schedule-popover {
+  width: min(430px, 100%);
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid rgba(215, 178, 93, 0.28);
+  border-radius: 8px;
+  background: rgba(8, 9, 8, 0.82);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(14px);
+}
+
+.schedule-popover strong,
+.special-schedule span {
+  color: #d7b25d;
+  font-weight: 900;
+}
+
+.schedule-popover dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.schedule-popover dl div {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.schedule-popover dt {
+  color: rgba(246, 241, 231, 0.7);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.schedule-popover dd {
+  margin: 0;
+  color: #f6f1e7;
+  font-weight: 850;
+}
+
+.schedule-popover p {
+  margin: 0;
+  color: rgba(246, 241, 231, 0.78);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.special-schedule {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(246, 241, 231, 0.1);
 }
 
 .client-shell .booking-layout {

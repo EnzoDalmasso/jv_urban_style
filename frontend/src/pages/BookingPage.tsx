@@ -1,10 +1,12 @@
-import { CheckCircle2, Scissors } from 'lucide-react';
+import { CalendarClock, CheckCircle2, Scissors } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import heroImage from '../assets/barbershop-lounge-hero.png';
 import { BrandLogo } from '../components/BrandLogo';
 import { DateTimeSelector } from '../components/DateTimeSelector';
-import { createAppointment, fetchServices } from '../lib/api';
-import type { AvailabilitySlot, CreateAppointmentResponse, Service } from '../types';
+import { createAppointment, fetchPublicSchedule, fetchServices } from '../lib/api';
+import type { AvailabilitySlot, BusinessHours, CreateAppointmentResponse, PublicSchedule, Service } from '../types';
+
+const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -24,6 +26,32 @@ function buildWhatsappUrl(phone: string | undefined, message: string) {
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
 
+function formatHour(value: string) {
+  return value.slice(0, 5);
+}
+
+function formatScheduleDate(value: string) {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: 'short'
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function summarizeBusinessHours(hours: BusinessHours[]) {
+  const globalHours = hours
+    .filter((hour) => hour.staff_id === null)
+    .sort((a, b) => a.day_of_week - b.day_of_week);
+
+  if (globalHours.length === 0) {
+    return [];
+  }
+
+  return globalHours.map((hour) => ({
+    label: dayLabels[hour.day_of_week],
+    value: hour.is_closed ? 'Cerrado' : `${formatHour(hour.opens_at)} - ${formatHour(hour.closes_at)}`
+  }));
+}
+
 export function BookingPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -33,6 +61,8 @@ export function BookingPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
   const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
+  const [schedule, setSchedule] = useState<PublicSchedule | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
   const transferDetails = confirmation?.transfer ?? {
     holder: 'JV Urban Style Barbería',
     alias: 'JVURBANSTYLE',
@@ -49,7 +79,14 @@ export function BookingPage() {
     fetchServices()
       .then((response) => setServices(response.services))
       .finally(() => setLoadingServices(false));
+
+    fetchPublicSchedule()
+      .then(setSchedule)
+      .catch(() => setSchedule(null));
   }, []);
+
+  const weeklyHours = schedule ? summarizeBusinessHours(schedule.businessHours) : [];
+  const specialHours = schedule?.specialHours ?? [];
 
   function toggleService(serviceId: string) {
     setSelectedSlot(undefined);
@@ -131,13 +168,14 @@ export function BookingPage() {
         </div>
         <header className="client-nav">
           <BrandLogo compact />
-          <nav aria-label="Secciones">
-            <button type="button" onClick={scrollToBooking}>Reservar</button>
-            <a href="#services-title">Servicios</a>
-            <a href="#booking-date-title">Agenda</a>
-          </nav>
-          <button className="nav-action" type="button" onClick={scrollToBooking}>
-            Reservar
+          <button
+            className="nav-action"
+            type="button"
+            aria-expanded={showSchedule}
+            onClick={() => setShowSchedule((current) => !current)}
+          >
+            <CalendarClock aria-hidden="true" />
+            Horarios semanales
           </button>
         </header>
         <div className="hero-copy">
@@ -152,13 +190,37 @@ export function BookingPage() {
               <Scissors aria-hidden="true" />
               Reservar turno
             </button>
-            <a className="secondary-cta" href="#booking">Ver agenda</a>
           </div>
-          <div className="hero-badges" aria-label="Datos del local">
-            <span>10:00 - 19:00</span>
-            <span>Cortes urbanos</span>
-            <span>Agenda online</span>
-          </div>
+          {showSchedule && (
+            <div className="schedule-popover" role="region" aria-label="Horarios del local">
+              <strong>Horarios del local</strong>
+              {weeklyHours.length > 0 ? (
+                <dl>
+                  {weeklyHours.map((hour) => (
+                    <div key={hour.label}>
+                      <dt>{hour.label}</dt>
+                      <dd>{hour.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p>Los horarios se muestran al configurarlos en el panel admin.</p>
+              )}
+
+              {specialHours.length > 0 && (
+                <div className="special-schedule">
+                  <span>Feriados o vacaciones</span>
+                  {specialHours.slice(0, 4).map((hour) => (
+                    <p key={hour.id}>
+                      {formatScheduleDate(hour.date)}: {hour.is_closed
+                        ? (hour.reason || 'Cerrado')
+                        : `${formatHour(hour.opens_at)} - ${formatHour(hour.closes_at)}`}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

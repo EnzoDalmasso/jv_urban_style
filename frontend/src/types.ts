@@ -62,6 +62,16 @@ export type SpecialHours = {
   reason: string | null;
 };
 
+export type PublicSchedule = {
+  timezone: string;
+  businessHours: BusinessHours[];
+  specialHours: SpecialHours[];
+  staff: Array<{
+    id: string;
+    full_name: string;
+  }>;
+};
+
 export type FixedAppointment = {
   id: string;
   staff_id: string;

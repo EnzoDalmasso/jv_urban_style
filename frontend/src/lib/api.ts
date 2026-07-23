@@ -2,6 +2,7 @@ import type {
   AdminSummary,
   AvailabilityResponse,
   CreateAppointmentResponse,
+  PublicSchedule,
   Service
 } from '../types';
 
@@ -15,6 +16,16 @@ export async function fetchServices() {
   }
 
   return response.json() as Promise<{ services: Service[] }>;
+}
+
+export async function fetchPublicSchedule() {
+  const response = await fetch(`${API_URL}/api/schedule`);
+
+  if (!response.ok) {
+    throw new Error('No pudimos cargar los horarios.');
+  }
+
+  return response.json() as Promise<PublicSchedule>;
 }
 
 export async function fetchAvailability(params: {
