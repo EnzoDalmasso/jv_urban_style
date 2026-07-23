@@ -654,8 +654,12 @@ export function AdminPage() {
           applicationServerKey: urlBase64ToUint8Array(config.publicKey)
         });
 
-      await saveAdminPushSubscription(pin, subscription.toJSON());
-      const testResult = await sendAdminPushTest(pin);
+      const serializedSubscription = subscription.toJSON();
+      await saveAdminPushSubscription(pin, serializedSubscription);
+      const testResult = await sendAdminPushTest(pin, serializedSubscription);
+      if (testResult.sent <= 0 && testResult.error) {
+        throw new Error(`No se pudo enviar la prueba push: ${testResult.error}`);
+      }
       setPushStatus('enabled');
       setPushMessage(
         testResult.sent > 0

@@ -15,6 +15,8 @@ const pushSubscriptionSchema = z.object({
   })
 });
 
+type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;
+
 type NewAppointmentPushInput = {
   clientName: string;
   startsAt: string;
@@ -116,29 +118,45 @@ export async function sendTestPush() {
   });
 }
 
-async function sendPushToSavedDevices(payloadInput: PushPayload) {
+export async function sendTestPushToSubscription(rawInput: unknown) {
+  const subscription = pushSubscriptionSchema.parse(rawInput);
+
+  return sendPushToSavedDevices({
+    title: 'Notificaciones activas',
+    body: 'Este dispositivo ya puede recibir avisos de nuevos turnos.',
+    url: '/admin',
+    tag: `push-test-${Date.now()}`
+  }, [subscription]);
+}
+
+async function sendPushToSavedDevices(payloadInput: PushPayload, directSubscriptions?: PushSubscriptionInput[]) {
   if (!configureWebPush() || !supabase) {
-    return { sent: 0, failed: 0 };
+    return { sent: 0, failed: 0, error: 'Faltan claves WEB_PUSH en Render.' };
   }
 
   const supabaseClient = supabase;
-  const { data, error } = await supabaseClient
-    .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth')
-    .returns<PushSubscriptionRow[]>();
+  let subscriptions: Array<PushSubscriptionRow | PushSubscriptionInput> = directSubscriptions ?? [];
 
-  if (error) {
-    if (isMissingSchemaError(error)) {
-      throw new HttpError(409, 'Falta ejecutar la migracion SQL de notificaciones push en Supabase.', error);
+  if (!directSubscriptions) {
+    const { data, error } = await supabaseClient
+      .from('push_subscriptions')
+      .select('id, endpoint, p256dh, auth')
+      .returns<PushSubscriptionRow[]>();
+
+    if (error) {
+      if (isMissingSchemaError(error)) {
+        throw new HttpError(409, 'Falta ejecutar la migracion SQL de notificaciones push en Supabase.', error);
+      }
+
+      console.warn('No se pudieron obtener suscripciones push.', error);
+      return { sent: 0, failed: 1, error: error.message };
     }
 
-    console.warn('No se pudieron obtener suscripciones push.', error);
-    return { sent: 0, failed: 1 };
+    subscriptions = data ?? [];
   }
 
-  const subscriptions = data ?? [];
   if (subscriptions.length === 0) {
-    return { sent: 0, failed: 0 };
+    return { sent: 0, failed: 0, error: 'No hay dispositivos guardados.' };
   }
 
   const payload = JSON.stringify(payloadInput);
@@ -146,8 +164,8 @@ async function sendPushToSavedDevices(payloadInput: PushPayload) {
     webPush.sendNotification({
       endpoint: row.endpoint,
       keys: {
-        p256dh: row.p256dh,
-        auth: row.auth
+        p256dh: 'keys' in row ? row.keys.p256dh : row.p256dh,
+        auth: 'keys' in row ? row.keys.auth : row.auth
       }
     }, payload)
   )));
@@ -160,7 +178,7 @@ async function sendPushToSavedDevices(payloadInput: PushPayload) {
     const row = subscriptions[index];
     const error = result.reason;
 
-    if (error?.statusCode === 404 || error?.statusCode === 410) {
+    if ('id' in row && (error?.statusCode === 404 || error?.statusCode === 410)) {
       await supabaseClient.from('push_subscriptions').delete().eq('id', row.id);
     } else {
       console.warn('No se pudo enviar notificacion push.', error);
@@ -169,6 +187,7 @@ async function sendPushToSavedDevices(payloadInput: PushPayload) {
 
   return {
     sent: results.filter((result) => result.status === 'fulfilled').length,
-    failed: results.filter((result) => result.status === 'rejected').length
+    failed: results.filter((result) => result.status === 'rejected').length,
+    error: results.find((result) => result.status === 'rejected')?.reason?.message
   };
 }
