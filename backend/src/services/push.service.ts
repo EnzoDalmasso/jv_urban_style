@@ -185,9 +185,21 @@ async function sendPushToSavedDevices(payloadInput: PushPayload, directSubscript
     }
   }));
 
+  const rejected = results.find((result) => result.status === 'rejected');
+
   return {
     sent: results.filter((result) => result.status === 'fulfilled').length,
     failed: results.filter((result) => result.status === 'rejected').length,
-    error: results.find((result) => result.status === 'rejected')?.reason?.message
+    error: rejected?.status === 'rejected' ? formatPushError(rejected.reason) : undefined
   };
+}
+
+function formatPushError(error: any) {
+  const parts = [
+    error?.message,
+    error?.statusCode ? `status ${error.statusCode}` : null,
+    error?.body ? `body ${String(error.body).slice(0, 180)}` : null
+  ].filter(Boolean);
+
+  return parts.join(' - ') || 'Error desconocido al enviar push.';
 }

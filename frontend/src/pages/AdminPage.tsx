@@ -648,11 +648,16 @@ export function AdminPage() {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription()
-        ?? await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.publicKey)
-        });
+      const existingSubscription = await registration.pushManager.getSubscription();
+
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.publicKey)
+      });
 
       const serializedSubscription = subscription.toJSON();
       await saveAdminPushSubscription(pin, serializedSubscription);
