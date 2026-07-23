@@ -255,18 +255,23 @@ function AppointmentCard({
           </span>
         ) : (
           <>
-            {appointment.depositRequired && (
+            {appointment.depositRequired && appointment.depositStatus !== 'paid' && (
               <button
                 type="button"
                 disabled={saving === `deposit-${appointment.id}`}
                 onClick={() => onChangeDepositStatus(
                   appointment.id,
-                  appointment.depositStatus === 'paid' ? 'pending' : 'paid',
-                  appointment.depositStatus === 'paid' ? null : acceptedUrl
+                  'paid',
+                  acceptedUrl
                 )}
               >
-                {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
+                Seña recibida
               </button>
+            )}
+            {appointment.depositRequired && appointment.depositStatus === 'paid' && appointment.status === 'confirmed' && (
+              <span className="status-badge status-confirmed">
+                Turno confirmado
+              </span>
             )}
             {appointment.depositRequired && pendingProofUrl && appointment.depositStatus !== 'paid' && (
               <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
