@@ -94,7 +94,7 @@ export async function createAppointment(rawInput: unknown) {
     staff_id: input.staffId,
     starts_at: matchingSlot.startsAt,
     ends_at: matchingSlot.endsAt,
-    status: depositRequired ? 'pending' : 'confirmed',
+    status: 'pending',
     notes: input.notes || null,
     total_duration_minutes: totalDuration,
     total_price: totalPrice

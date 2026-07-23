@@ -336,7 +336,7 @@ export function BookingPage() {
 
           {openStep === 3 && confirmation ? (
             <div className="summary-box">
-              <span>{confirmation.depositRequired ? 'Reserva pendiente' : 'Reserva confirmada'}</span>
+              <span>Reserva pendiente</span>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
               {appointmentRequestWhatsappUrl ? (
                 <a className="secondary-button proof-link" href={appointmentRequestWhatsappUrl} target="_blank" rel="noreferrer">

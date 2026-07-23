@@ -66,7 +66,7 @@ type FixedAppointmentRow = {
 
 type BusyInterval = {
   interval: Interval;
-  reason: 'Pendiente de comprobante' | 'Reservado' | 'No disponible';
+  reason: 'Pendiente de aceptación' | 'Pendiente de comprobante' | 'Reservado' | 'No disponible';
 };
 
 export type Slot = {
@@ -452,9 +452,11 @@ function toBusyIntervals(rows: {
 }) {
   const appointmentIntervals = rows.appointments.map((row) => ({
     interval: Interval.fromDateTimes(DateTime.fromISO(row.starts_at), DateTime.fromISO(row.ends_at)),
-    reason: row.status === 'pending' || row.deposit_status === 'pending'
+    reason: row.deposit_status === 'pending'
       ? 'Pendiente de comprobante' as const
-      : 'Reservado' as const
+      : row.status === 'pending'
+        ? 'Pendiente de aceptación' as const
+        : 'Reservado' as const
   }));
 
   const timeOffIntervals = rows.timeOff.map((row) => ({

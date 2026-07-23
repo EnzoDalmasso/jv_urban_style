@@ -143,7 +143,7 @@ function depositLabel(status: string) {
 
 function appointmentStatusLabel(status: string) {
   const labels: Record<string, string> = {
-    pending: 'Pendiente de comprobante',
+    pending: 'Pendiente',
     confirmed: 'Reservado',
     cancelled: 'Rechazado',
     completed: 'Corte realizado',
@@ -166,6 +166,10 @@ function appointmentDisplayLabel(appointment: AdminAppointment) {
     return 'Pendiente de comprobante';
   }
 
+  if (appointment.status === 'pending') {
+    return 'Pendiente de aceptación';
+  }
+
   return appointmentStatusLabel(appointment.status);
 }
 
@@ -177,7 +181,7 @@ type AppointmentCardProps = {
   appointment: AdminAppointment;
   saving: string | null;
   showAttendanceActions: boolean;
-  onChangeStatus: (id: string, status: string) => void;
+  onChangeStatus: (id: string, status: string, whatsappUrl?: string | null) => void;
   onChangeDepositStatus: (id: string, depositStatus: string, whatsappUrl?: string | null) => void;
 };
 
@@ -200,6 +204,10 @@ function AppointmentCard({
   const acceptedUrl = buildWhatsappUrl(
     appointment.clientPhone,
     `Hola ${appointment.clientName}, ya recibimos el comprobante de tu seña. Tu turno queda confirmado para el ${appointmentDate} a las ${appointmentTime}. Te esperamos en JV Urban Style.`
+  );
+  const confirmedUrl = buildWhatsappUrl(
+    appointment.clientPhone,
+    `Hola ${appointment.clientName}, confirmamos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Te esperamos.`
   );
 
   return (
@@ -243,6 +251,15 @@ function AppointmentCard({
               <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
                 Pedir comprobante
               </a>
+            )}
+            {!appointment.depositRequired && appointment.status === 'pending' && (
+              <button
+                type="button"
+                disabled={saving === appointment.id}
+                onClick={() => onChangeStatus(appointment.id, 'confirmed', confirmedUrl)}
+              >
+                Confirmar turno
+              </button>
             )}
             {showAttendanceActions && (
               <button
@@ -548,11 +565,20 @@ export function AdminPage() {
     });
   }
 
-  async function changeAppointmentStatus(id: string, status: string) {
-    await runAdminAction(id, async () => {
+  async function changeAppointmentStatus(id: string, status: string, whatsappUrl?: string | null) {
+    const whatsappWindow = whatsappUrl ? window.open('about:blank', '_blank') : null;
+    const saved = await runAdminAction(id, async () => {
       await updateAdminAppointmentStatus(pin, id, status);
       await reload();
     });
+
+    if (whatsappWindow) {
+      if (saved && whatsappUrl) {
+        whatsappWindow.location.href = whatsappUrl;
+      } else {
+        whatsappWindow.close();
+      }
+    }
   }
 
   async function changeDepositStatus(id: string, depositStatus: string, whatsappUrl?: string | null) {
