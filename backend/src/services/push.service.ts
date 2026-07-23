@@ -103,7 +103,7 @@ export async function sendNewAppointmentPush(input: NewAppointmentPushInput) {
 
   return sendPushToSavedDevices({
     title: 'Nuevo turno solicitado',
-    body: `${input.clientName} pidio ${serviceText} para ${startsAt}. ${input.depositRequired ? 'Pendiente de sena.' : 'Pendiente de aceptacion.'}`,
+    body: `${input.clientName} pidio ${serviceText} para ${startsAt}. ${input.depositRequired ? 'Pendiente de seña.' : 'Pendiente de aceptacion.'}`,
     url: '/admin',
     tag: `new-appointment-${input.startsAt}`
   });
