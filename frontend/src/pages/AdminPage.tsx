@@ -192,7 +192,8 @@ function appointmentDisplayLabel(appointment: AdminAppointment) {
 }
 
 function canManageAttendance(appointment: AdminAppointment) {
-  return formatISODate(new Date(appointment.startsAt)) <= todayISO();
+  return appointment.status === 'confirmed'
+    && new Date(appointment.startsAt).getTime() <= Date.now();
 }
 
 type AppointmentCardProps = {
@@ -214,6 +215,8 @@ function AppointmentCard({
   const appointmentTime = formatAppointmentTime(appointment.startsAt);
   const servicesText = appointment.services.map((service) => service.name).join(', ');
   const isTerminal = isTerminalAppointment(appointment.status);
+  const canShowAttendanceActions = showAttendanceActions && appointment.status === 'confirmed';
+  const canShowCancelAction = appointment.status === 'pending' || !canShowAttendanceActions;
   const displayStatus = appointmentDisplayLabel(appointment);
   const pendingProofUrl = buildWhatsappUrl(
     appointment.clientPhone,
@@ -279,7 +282,7 @@ function AppointmentCard({
                 Confirmar turno
               </button>
             )}
-            {showAttendanceActions && (
+            {canShowAttendanceActions && (
               <button
                 type="button"
                 disabled={saving === appointment.id}
@@ -288,14 +291,16 @@ function AppointmentCard({
                 {saving === appointment.id ? 'Guardando...' : 'Hecho'}
               </button>
             )}
-            <button
-              type="button"
-              disabled={saving === appointment.id}
-              onClick={() => onChangeStatus(appointment.id, 'cancelled')}
-            >
-              {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
-            </button>
-            {showAttendanceActions && (
+            {canShowCancelAction && (
+              <button
+                type="button"
+                disabled={saving === appointment.id}
+                onClick={() => onChangeStatus(appointment.id, 'cancelled')}
+              >
+                {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
+              </button>
+            )}
+            {canShowAttendanceActions && (
               <button
                 type="button"
                 disabled={saving === appointment.id}
