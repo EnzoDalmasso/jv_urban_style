@@ -26,6 +26,20 @@ function buildWhatsappUrl(phone: string | undefined, message: string) {
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
 
+function formatAppointmentDateTime(value: string | undefined) {
+  if (!value) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(value));
+}
+
 function formatHour(value: string) {
   return value.slice(0, 5);
 }
@@ -72,6 +86,12 @@ export function BookingPage() {
     ? buildWhatsappUrl(
         confirmation.businessWhatsappPhone,
         'Hola JV Urban Style, ya reservé mi turno. Envío el comprobante de la seña.'
+      )
+    : null;
+  const appointmentRequestWhatsappUrl = confirmation
+    ? buildWhatsappUrl(
+        confirmation.businessWhatsappPhone,
+        `Hola JV Urban Style, ya reservé un turno para el ${formatAppointmentDateTime(confirmation.startsAt)}. Queda pendiente de aceptación del dueño.`
       )
     : null;
 
@@ -276,6 +296,13 @@ export function BookingPage() {
             <div className="summary-box">
               <span>{confirmation.depositRequired ? 'Reserva pendiente' : 'Reserva confirmada'}</span>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
+              {appointmentRequestWhatsappUrl ? (
+                <a className="secondary-button proof-link" href={appointmentRequestWhatsappUrl} target="_blank" rel="noreferrer">
+                  Avisar al local por WhatsApp
+                </a>
+              ) : (
+                <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
+              )}
               {confirmation.depositRequired && (
                 <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
@@ -301,9 +328,7 @@ export function BookingPage() {
                     <a className="secondary-button proof-link" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
                       Enviar comprobante por WhatsApp
                     </a>
-                  ) : (
-                    <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
-                  )}
+                  ) : null}
                   <button className="secondary-button" type="button" onClick={startNewBooking}>
                     Hacer otra reserva
                   </button>
