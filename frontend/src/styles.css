@@ -484,6 +484,10 @@ h2 {
   color: #ff8f8f;
 }
 
+.success-text {
+  color: #42f4c8;
+}
+
 .summary-box {
   display: grid;
   gap: 8px;
@@ -680,6 +684,10 @@ select option {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.push-label-short {
+  display: none;
 }
 
 .admin-toolbar {
@@ -1048,6 +1056,73 @@ select option {
 
   .admin-header h1 {
     font-size: 3.4rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-shell {
+    width: min(100% - 24px, 1280px);
+    padding: 22px 0 44px;
+  }
+
+  .admin-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .admin-title-row {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .admin-title-row .brand-logo.compact {
+    width: 82px;
+    height: 82px;
+  }
+
+  .admin-header h1 {
+    font-size: clamp(2.2rem, 12vw, 3.2rem);
+    line-height: 0.98;
+  }
+
+  .admin-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 0.7fr;
+    gap: 8px;
+  }
+
+  .admin-header-actions .icon-text-button {
+    width: 100%;
+    min-width: 0;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  .push-label-full {
+    display: none;
+  }
+
+  .push-label-short {
+    display: inline;
+  }
+
+  .admin-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-toolbar label {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .admin-stat {
+    min-width: 0;
   }
 }
 

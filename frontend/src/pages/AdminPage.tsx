@@ -323,6 +323,7 @@ export function AdminPage() {
   const [openStaffUpcoming, setOpenStaffUpcoming] = useState<Record<string, boolean>>({});
   const [specialMode, setSpecialMode] = useState<SpecialMode>('hours');
   const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
+  const [pushMessage, setPushMessage] = useState('');
 
   useEffect(() => {
     if (!pin) {
@@ -621,16 +622,19 @@ export function AdminPage() {
   async function enablePushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       setPushStatus('unsupported');
+      setPushMessage('Este navegador no soporta notificaciones push PWA.');
       return;
     }
 
     setPushStatus('saving');
+    setPushMessage('');
 
     try {
       const config = await fetchAdminPushConfig(pin);
 
       if (!config.enabled || !config.publicKey) {
         setPushStatus('needs_config');
+        setPushMessage('Faltan configurar las claves WEB_PUSH en Render.');
         return;
       }
 
@@ -638,6 +642,7 @@ export function AdminPage() {
 
       if (permission !== 'granted') {
         setPushStatus('blocked');
+        setPushMessage('El navegador bloqueó las notificaciones. Revisá permisos del sitio.');
         return;
       }
 
@@ -650,9 +655,11 @@ export function AdminPage() {
 
       await saveAdminPushSubscription(pin, subscription.toJSON());
       setPushStatus('enabled');
+      setPushMessage('Notificaciones activas en este dispositivo.');
     } catch (err) {
       console.error(err);
       setPushStatus('error');
+      setPushMessage(err instanceof Error ? err.message : 'No se pudieron activar las notificaciones.');
     }
   }
 
@@ -715,7 +722,8 @@ export function AdminPage() {
         <div className="admin-header-actions">
           <button className="icon-text-button" type="button" onClick={enablePushNotifications} disabled={pushStatus === 'saving'}>
             <Bell aria-hidden="true" />
-            {pushStatus === 'enabled' ? 'Notificaciones activas' : 'Activar notificaciones'}
+            <span className="push-label-full">{pushStatus === 'enabled' ? 'Notificaciones activas' : 'Activar notificaciones'}</span>
+            <span className="push-label-short">{pushStatus === 'enabled' ? 'Activas' : 'Notificaciones'}</span>
           </button>
           <button className="icon-text-button" type="button" onClick={logout}>
             <LogOut aria-hidden="true" />
@@ -724,17 +732,8 @@ export function AdminPage() {
         </div>
       </header>
 
-      {pushStatus === 'needs_config' && (
-        <p className="error-text">Faltan configurar las claves WEB_PUSH en Render.</p>
-      )}
-      {pushStatus === 'blocked' && (
-        <p className="error-text">El navegador bloqueó las notificaciones. Activarlas desde permisos del sitio.</p>
-      )}
-      {pushStatus === 'unsupported' && (
-        <p className="error-text">Este navegador no soporta notificaciones push PWA.</p>
-      )}
-      {pushStatus === 'error' && (
-        <p className="error-text">No se pudieron activar las notificaciones.</p>
+      {pushMessage && (
+        <p className={pushStatus === 'enabled' ? 'success-text' : 'error-text'}>{pushMessage}</p>
       )}
 
       <section className="admin-toolbar">
