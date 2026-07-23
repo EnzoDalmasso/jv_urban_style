@@ -8,7 +8,7 @@ export function BrandLogo({ compact = false }: BrandLogoProps) {
       <span className="brand-crown">♕</span>
       <strong>JV</strong>
       <span>Urban Style</span>
-      <small>Barbería · 2007</small>
+      <small>Barbería</small>
     </div>
   );
 }

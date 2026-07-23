@@ -1,5 +1,6 @@
 import { CheckCircle2, Scissors } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
+import heroImage from '../assets/barbershop-lounge-hero.png';
 import { BrandLogo } from '../components/BrandLogo';
 import { DateTimeSelector } from '../components/DateTimeSelector';
 import { createAppointment, fetchServices } from '../lib/api';
@@ -33,7 +34,7 @@ export function BookingPage() {
   const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
   const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
   const transferDetails = confirmation?.transfer ?? {
-    holder: 'JV Urban Style Barberia',
+    holder: 'JV Urban Style Barbería',
     alias: 'JVURBANSTYLE',
     cbu: 'Configurar en admin'
   };
@@ -118,24 +119,46 @@ export function BookingPage() {
   }
 
   return (
-    <main>
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="brand-lockup">
-            <BrandLogo />
-            <div>
-              <p className="eyebrow">JV Urban Style</p>
-            </div>
-          </div>
-          <h1>Reservas urbanas, agenda prolija y estilo sin espera.</h1>
-          <p>
-            Elegí el servicio, encontrá un horario libre en tiempo real y dejá tu turno listo
-            en menos de un minuto.
-          </p>
-          <button className="primary-cta" type="button" onClick={scrollToBooking}>
-            <Scissors aria-hidden="true" />
-            Reservar turno
+    <main className="client-shell">
+      <section
+        className="hero lounge-hero"
+        style={{ backgroundImage: `linear-gradient(90deg, rgba(8, 9, 8, 0.94) 0%, rgba(8, 9, 8, 0.72) 42%, rgba(8, 9, 8, 0.12) 100%), url(${heroImage})` }}
+      >
+        <div className="browser-dots" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <header className="client-nav">
+          <BrandLogo compact />
+          <nav aria-label="Secciones">
+            <button type="button" onClick={scrollToBooking}>Reservar</button>
+            <a href="#services-title">Servicios</a>
+            <a href="#booking-date-title">Agenda</a>
+          </nav>
+          <button className="nav-action" type="button" onClick={scrollToBooking}>
+            Reservar
           </button>
+        </header>
+        <div className="hero-copy">
+          <p className="eyebrow">JV Urban Style</p>
+          <h1>Más que un corte.</h1>
+          <p>
+            Elegí tu servicio, encontrá un horario real y dejá tu turno listo con una experiencia
+            premium, simple y sin vueltas.
+          </p>
+          <div className="hero-actions">
+            <button className="primary-cta" type="button" onClick={scrollToBooking}>
+              <Scissors aria-hidden="true" />
+              Reservar turno
+            </button>
+            <a className="secondary-cta" href="#booking">Ver agenda</a>
+          </div>
+          <div className="hero-badges" aria-label="Datos del local">
+            <span>10:00 - 19:00</span>
+            <span>Cortes urbanos</span>
+            <span>Agenda online</span>
+          </div>
         </div>
       </section>
 
@@ -189,7 +212,7 @@ export function BookingPage() {
 
           {confirmation ? (
             <div className="summary-box">
-              <span>Código {confirmation.publicCode}</span>
+              <span>{confirmation.depositRequired ? 'Reserva pendiente' : 'Reserva confirmada'}</span>
               <strong>{confirmation.staffName}</strong>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
               {confirmation.depositRequired && (
@@ -270,7 +293,7 @@ export function BookingPage() {
       </section>
 
       <footer className="site-footer">
-        <span>© 2026 JV Urban Style Barberia. Todos los derechos reservados.</span>
+        <span>© 2026 JV Urban Style Barbería. Todos los derechos reservados.</span>
         <span>Desarrollado por <strong>Enzo Dalmasso</strong></span>
       </footer>
     </main>
