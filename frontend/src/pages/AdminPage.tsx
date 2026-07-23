@@ -288,7 +288,7 @@ function AppointmentCard({
                 disabled={saving === appointment.id}
                 onClick={() => onChangeStatus(appointment.id, 'completed')}
               >
-                {saving === appointment.id ? 'Guardando...' : 'Hecho'}
+                {saving === appointment.id ? 'Guardando...' : 'Vino'}
               </button>
             )}
             {canShowCancelAction && (
@@ -1448,7 +1448,7 @@ export function AdminPage() {
                               appointment={appointment}
                               key={appointment.id}
                               saving={saving}
-                              showAttendanceActions={false}
+                              showAttendanceActions={canManageAttendance(appointment)}
                               onChangeStatus={changeAppointmentStatus}
                               onChangeDepositStatus={changeDepositStatus}
                             />
