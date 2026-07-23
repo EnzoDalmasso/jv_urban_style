@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#070909"/>
+  <circle cx="256" cy="256" r="205" fill="none" stroke="#d7b25d" stroke-width="14"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#f6f1e7" stroke-opacity="0.28" stroke-width="6"/>
+  <path d="M206 112h100l-20 34h-60l-20-34Z" fill="#d7b25d"/>
+  <path d="M225 109l31-38 31 38" fill="none" stroke="#d7b25d" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="292" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="166" font-weight="700" fill="#f6f1e7">JV</text>
+  <text x="256" y="365" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="800" letter-spacing="7" fill="#d7b25d">URBAN STYLE</text>
+  <text x="256" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="5" fill="#f6f1e7" opacity="0.82">BARBERIA</text>
+</svg>
