@@ -213,43 +213,41 @@ export function BookingPage() {
           {confirmation ? (
             <div className="summary-box">
               <span>{confirmation.depositRequired ? 'Reserva pendiente' : 'Reserva confirmada'}</span>
-              <strong>{confirmation.staffName}</strong>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
               {confirmation.depositRequired && (
                 <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
               {confirmation.depositRequired ? (
                 <div className="transfer-details">
-                <strong>Datos para transferir</strong>
-                <dl>
-                  <div>
-                    <dt>Titular</dt>
-                    <dd>{transferDetails.holder}</dd>
-                  </div>
-                  <div>
-                    <dt>Alias</dt>
-                    <dd>{transferDetails.alias}</dd>
-                  </div>
-                  <div>
-                    <dt>CBU/CVU</dt>
-                    <dd>{transferDetails.cbu}</dd>
-                  </div>
-                </dl>
-                {proofWhatsappUrl ? (
-                  <a className="secondary-button proof-link" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
-                    Enviar comprobante por WhatsApp
-                  </a>
-                ) : (
-                  <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
-                )}
-                <button className="secondary-button" type="button" onClick={startNewBooking}>
-                  Hacer otra reserva
-                </button>
-              </div>
+                  <strong>{confirmation.staffName}</strong>
+                  <strong>Datos para transferir</strong>
+                  <dl>
+                    <div>
+                      <dt>Titular</dt>
+                      <dd>{transferDetails.holder}</dd>
+                    </div>
+                    <div>
+                      <dt>Alias</dt>
+                      <dd>{transferDetails.alias}</dd>
+                    </div>
+                    <div>
+                      <dt>CBU/CVU</dt>
+                      <dd>{transferDetails.cbu}</dd>
+                    </div>
+                  </dl>
+                  {proofWhatsappUrl ? (
+                    <a className="secondary-button proof-link" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
+                      Enviar comprobante por WhatsApp
+                    </a>
+                  ) : (
+                    <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
+                  )}
+                  <button className="secondary-button" type="button" onClick={startNewBooking}>
+                    Hacer otra reserva
+                  </button>
+                </div>
               ) : (
-                <div className="transfer-details">
-                  <strong>Turno confirmado</strong>
-                  <p>No hace falta enviar seña para esta reserva.</p>
+                <div className="summary-actions">
                   <button className="secondary-button" type="button" onClick={startNewBooking}>
                     Hacer otra reserva
                   </button>

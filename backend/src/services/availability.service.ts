@@ -53,7 +53,7 @@ type BusyRow = {
   staff_id: string;
   starts_at: string;
   ends_at: string;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   deposit_status?: string | null;
 };
 
@@ -362,7 +362,7 @@ async function getAppointments(dayStartIso: string | null, dayEndIso: string | n
     .from('appointments')
     .select('staff_id, starts_at, ends_at, status, deposit_status')
     .in('staff_id', staffIds)
-    .in('status', ['pending', 'confirmed'])
+    .neq('status', 'cancelled')
     .lt('starts_at', dayEndIso)
     .gt('ends_at', dayStartIso)
     .returns<BusyRow[]>();
@@ -483,7 +483,7 @@ function buildSlots(params: {
   staff: StaffRow;
 }): Slot[] {
   const slots: Slot[] = [];
-  const nowUtc = DateTime.now().toUTC();
+  const now = DateTime.now().setZone(params.staff.timezone || env.BUSINESS_TIMEZONE);
   let cursor = params.opensAt;
 
   while (cursor.plus({ minutes: params.durationMinutes }) <= params.closesAt) {
@@ -494,7 +494,7 @@ function buildSlots(params: {
     const startsAt = slotStartUtc.toISO();
     const endsAt = slotEnd.toUTC().toISO();
 
-    if (startsAt && endsAt && slotStartUtc > nowUtc) {
+    if (startsAt && endsAt && cursor > now) {
       slots.push({
         time: cursor.toFormat('HH:mm'),
         startsAt,
