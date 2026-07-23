@@ -62,8 +62,10 @@ export function DateTimeSelector({
   onSelectSlot,
   refreshToken = 0
 }: DateTimeSelectorProps) {
-  const today = useMemo(() => new Date(), []);
-  const todayISO = useMemo(() => toISODate(today), [today]);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const todayISO = useMemo(() => toISODate(currentTime), [currentTime]);
+  const currentTimestamp = currentTime.getTime();
+  const today = currentTime;
   const currentMonthISO = useMemo(() => toISODate(startOfMonth(today)), [today]);
   const [selectedDate, setSelectedDate] = useState(todayISO);
   const [monthCursor, setMonthCursor] = useState(() => startOfMonth(today));
@@ -73,6 +75,32 @@ export function DateTimeSelector({
 
   const calendarDays = useMemo(() => buildCalendarDays(monthCursor), [monthCursor]);
   const canGoPrevious = toISODate(startOfMonth(monthCursor)) > currentMonthISO;
+  const visibleSlots = useMemo(
+    () => slots.filter((slot) => new Date(slot.startsAt).getTime() > currentTimestamp),
+    [slots, currentTimestamp]
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate < todayISO) {
+      setSelectedDate(todayISO);
+      setMonthCursor(startOfMonth(currentTime));
+      onSelectSlot(undefined);
+    }
+  }, [currentTime, onSelectSlot, selectedDate, todayISO]);
+
+  useEffect(() => {
+    if (selectedSlot && new Date(selectedSlot.startsAt).getTime() <= currentTimestamp) {
+      onSelectSlot(undefined);
+    }
+  }, [currentTimestamp, onSelectSlot, selectedSlot]);
 
   useEffect(() => {
     if (serviceIds.length === 0) {
@@ -193,13 +221,13 @@ export function DateTimeSelector({
 
         {error && <p className="error-text">{error}</p>}
 
-        {!loading && !error && serviceIds.length > 0 && slots.length === 0 && (
+        {!loading && !error && serviceIds.length > 0 && visibleSlots.length === 0 && (
           <p className="muted">No hay horarios libres para esta fecha.</p>
         )}
 
-        {!loading && slots.length > 0 && (
+        {!loading && visibleSlots.length > 0 && (
           <div className="slot-grid" aria-label="Horarios disponibles">
-            {slots.map((slot) => {
+            {visibleSlots.map((slot) => {
               const isSelected = selectedSlot?.startsAt === slot.startsAt
                 && selectedSlot.staffId === slot.staffId;
 
