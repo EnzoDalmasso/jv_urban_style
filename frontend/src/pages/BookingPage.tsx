@@ -114,9 +114,7 @@ export function BookingPage() {
     setSelectedSlot(undefined);
     setConfirmation(null);
     setSelectedServiceIds((current) => {
-      const next = current.includes(serviceId)
-        ? current.filter((id) => id !== serviceId)
-        : [...current, serviceId];
+      const next = current.includes(serviceId) ? [] : [serviceId];
 
       setOpenStep(next.length > 0 ? 2 : 1);
       return next;
@@ -263,7 +261,7 @@ export function BookingPage() {
           >
             <span>
               <p className="eyebrow">Paso 1</p>
-              <h2 id="services-title">Seleccioná servicios</h2>
+              <h2 id="services-title">Seleccioná un servicio</h2>
             </span>
             <span className="accordion-icons">
               <Scissors aria-hidden="true" />

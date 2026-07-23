@@ -239,7 +239,7 @@ function AppointmentCard({
                 {appointment.depositStatus === 'paid' ? 'Marcar pendiente' : 'Seña recibida'}
               </button>
             )}
-            {pendingProofUrl && appointment.depositStatus !== 'paid' && (
+            {appointment.depositRequired && pendingProofUrl && appointment.depositStatus !== 'paid' && (
               <a className="status-link" href={pendingProofUrl} target="_blank" rel="noreferrer">
                 Pedir comprobante
               </a>
