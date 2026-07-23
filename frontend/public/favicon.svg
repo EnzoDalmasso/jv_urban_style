@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="64" fill="#070909"/>
+  <circle cx="64" cy="64" r="53" fill="none" stroke="#d7b25d" stroke-width="3"/>
+  <circle cx="64" cy="64" r="45" fill="none" stroke="#f6f1e7" stroke-opacity="0.36" stroke-width="1.5"/>
+  <path d="M51 28h26l-5 9H56l-5-9Z" fill="#d7b25d"/>
+  <path d="M56 27l8-9 8 9" fill="none" stroke="#d7b25d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="64" y="76" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="43" font-weight="700" fill="#f6f1e7">JV</text>
+  <text x="64" y="94" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.5" fill="#d7b25d">URBAN STYLE</text>
+</svg>
