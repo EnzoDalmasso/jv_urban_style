@@ -1,4 +1,4 @@
-import { CalendarClock, CheckCircle2, Scissors } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ChevronDown, Scissors } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import heroImage from '../assets/barbershop-lounge-hero.png';
 import { BrandLogo } from '../components/BrandLogo';
@@ -7,6 +7,7 @@ import { createAppointment, fetchPublicSchedule, fetchServices } from '../lib/ap
 import type { AvailabilitySlot, BusinessHours, CreateAppointmentResponse, PublicSchedule, Service } from '../types';
 
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+type BookingStep = 1 | 2 | 3;
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -77,6 +78,7 @@ export function BookingPage() {
   const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
   const [schedule, setSchedule] = useState<PublicSchedule | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [openStep, setOpenStep] = useState<BookingStep>(1);
   const transferDetails = confirmation?.transfer ?? {
     holder: 'JV Urban Style Barbería',
     alias: 'JVURBANSTYLE',
@@ -111,23 +113,30 @@ export function BookingPage() {
   function toggleService(serviceId: string) {
     setSelectedSlot(undefined);
     setConfirmation(null);
-    setSelectedServiceIds((current) => (
-      current.includes(serviceId)
+    setSelectedServiceIds((current) => {
+      const next = current.includes(serviceId)
         ? current.filter((id) => id !== serviceId)
-        : [...current, serviceId]
-    ));
+        : [...current, serviceId];
+
+      setOpenStep(next.length > 0 ? 2 : 1);
+      return next;
+    });
   }
 
   function selectSlot(slot: AvailabilitySlot | undefined) {
     setSelectedSlot(slot);
     setConfirmation(null);
     setError(null);
+    if (slot) {
+      setOpenStep(3);
+    }
   }
 
   function startNewBooking() {
     setSelectedSlot(undefined);
     setConfirmation(null);
     setError(null);
+    setOpenStep(1);
   }
 
   function scrollToBooking() {
@@ -244,41 +253,51 @@ export function BookingPage() {
         </div>
       </section>
 
-      <section className="booking-layout" id="booking">
-        <div className="booking-panel" aria-labelledby="services-title">
-          <div className="panel-heading">
-            <div>
+      <section className="booking-layout accordion-layout" id="booking">
+        <div className={openStep === 1 ? 'booking-panel accordion-panel open attention-step' : 'booking-panel accordion-panel'} aria-labelledby="services-title">
+          <button
+            className="accordion-heading"
+            type="button"
+            aria-expanded={openStep === 1}
+            onClick={() => setOpenStep(1)}
+          >
+            <span>
               <p className="eyebrow">Paso 1</p>
               <h2 id="services-title">Seleccioná servicios</h2>
+            </span>
+            <span className="accordion-icons">
+              <Scissors aria-hidden="true" />
+              <ChevronDown aria-hidden="true" />
+            </span>
+          </button>
+
+          {openStep === 1 && (
+            <div className="accordion-content service-grid">
+              {loadingServices && <p className="muted">Cargando servicios...</p>}
+
+              {services.map((service) => {
+                const active = selectedServiceIds.includes(service.id);
+
+                return (
+                  <button
+                    className={active ? 'service-card active' : 'service-card'}
+                    key={service.id}
+                    type="button"
+                    onClick={() => toggleService(service.id)}
+                  >
+                    <span className="service-topline">
+                      <strong>{service.name}</strong>
+                      {active && <CheckCircle2 aria-label="Seleccionado" />}
+                    </span>
+                    <span>{service.description}</span>
+                    <span className="service-meta">
+                      {service.duration_minutes} min - {formatPrice(service.price)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-            <Scissors aria-hidden="true" />
-          </div>
-
-          <div className="service-grid">
-            {loadingServices && <p className="muted">Cargando servicios...</p>}
-
-            {services.map((service) => {
-              const active = selectedServiceIds.includes(service.id);
-
-              return (
-                <button
-                  className={active ? 'service-card active' : 'service-card'}
-                  key={service.id}
-                  type="button"
-                  onClick={() => toggleService(service.id)}
-                >
-                  <span className="service-topline">
-                    <strong>{service.name}</strong>
-                    {active && <CheckCircle2 aria-label="Seleccionado" />}
-                  </span>
-                  <span>{service.description}</span>
-                  <span className="service-meta">
-                    {service.duration_minutes} min - {formatPrice(service.price)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          )}
         </div>
 
         <DateTimeSelector
@@ -286,13 +305,38 @@ export function BookingPage() {
           selectedSlot={selectedSlot}
           onSelectSlot={selectSlot}
           refreshToken={availabilityRefreshToken}
+          isOpen={openStep === 2}
+          isDisabled={selectedServiceIds.length === 0}
+          onToggle={() => {
+            if (selectedServiceIds.length > 0) {
+              setOpenStep(2);
+            }
+          }}
         />
 
-        <aside className="summary-panel" aria-label="Resumen de reserva">
-          <p className="eyebrow">Paso 3</p>
-          <h2>Confirmación</h2>
+        <aside className={openStep === 3 ? 'summary-panel accordion-panel open' : 'summary-panel accordion-panel'} aria-label="Resumen de reserva">
+          <button
+            className="accordion-heading"
+            type="button"
+            aria-expanded={openStep === 3}
+            disabled={!selectedSlot && !confirmation}
+            onClick={() => {
+              if (selectedSlot || confirmation) {
+                setOpenStep(3);
+              }
+            }}
+          >
+            <span>
+              <p className="eyebrow">Paso 3</p>
+              <h2>Datos del cliente</h2>
+            </span>
+            <span className="accordion-icons">
+              <CheckCircle2 aria-hidden="true" />
+              <ChevronDown aria-hidden="true" />
+            </span>
+          </button>
 
-          {confirmation ? (
+          {openStep === 3 && confirmation ? (
             <div className="summary-box">
               <span>{confirmation.depositRequired ? 'Reserva pendiente' : 'Reserva confirmada'}</span>
               <p>Total: {formatPrice(confirmation.totalPrice)}</p>
@@ -341,7 +385,7 @@ export function BookingPage() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : openStep === 3 ? (
             <form className="stack-form" onSubmit={handleSubmit}>
               <div className="selected-slot-copy">
                 {selectedSlot ? (
@@ -373,7 +417,7 @@ export function BookingPage() {
                 {submitting ? 'Reservando...' : 'Confirmar turno'}
               </button>
             </form>
-          )}
+          ) : null}
         </aside>
       </section>
 
