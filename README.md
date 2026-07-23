@@ -46,9 +46,6 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 BUSINESS_TIMEZONE=America/Argentina/Buenos_Aires
 SLOT_INTERVAL_MINUTES=15
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_GRAPH_API_VERSION=v20.0
 ```
 
 Frontend (`frontend/.env`):
@@ -68,21 +65,10 @@ VITE_API_URL=http://localhost:4000
 - `PATCH /api/admin/services/:id`
 - `PUT /api/admin/business-hours`
 - `POST /api/admin/special-hours`
-- `GET /api/schedule`
 
 La disponibilidad se calcula en servidor para evitar doble reserva. El SQL tambien incluye una restriccion de exclusion en PostgreSQL para bloquear solapamientos por profesional.
 
 El panel del dueño vive en `/admin` y requiere el PIN configurado en `ADMIN_PIN`.
-
-## WhatsApp automatico
-
-El backend intenta enviar un WhatsApp al cliente cuando se crea el turno. Para activarlo en Render, cargar:
-
-- `WHATSAPP_ACCESS_TOKEN`: token de Meta WhatsApp Cloud API.
-- `WHATSAPP_PHONE_NUMBER_ID`: ID del numero emisor de WhatsApp.
-- `WHATSAPP_GRAPH_API_VERSION`: version de Graph API, por defecto `v20.0`.
-
-Si esas variables no estan cargadas o Meta rechaza el envio, la reserva no falla; solo queda el aviso en logs.
 
 ## Arranque local
 

@@ -27,10 +27,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   BUSINESS_TIMEZONE: z.string().default('America/Argentina/Buenos_Aires'),
-  SLOT_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15),
-  WHATSAPP_ACCESS_TOKEN: z.string().min(1).optional(),
-  WHATSAPP_PHONE_NUMBER_ID: z.string().min(1).optional(),
-  WHATSAPP_GRAPH_API_VERSION: z.string().min(1).default('v20.0')
+  SLOT_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15)
 });
 
 const parsedEnv = envSchema.parse(process.env);
