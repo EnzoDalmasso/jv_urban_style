@@ -2,6 +2,7 @@
   "name": "JV Urban Style Barbería",
   "short_name": "JV Urban",
   "description": "Reservas online para JV Urban Style Barbería.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

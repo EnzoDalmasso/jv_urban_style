@@ -4,7 +4,6 @@ import App from './App';
 import './styles.css';
 
 const isAdminRoute = window.location.pathname.startsWith('/admin');
-const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches
   || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
@@ -12,10 +11,6 @@ if (isAdminRoute) {
   window.localStorage.setItem('jv_pwa_start_path', '/admin');
 } else if (isStandalone && window.localStorage.getItem('jv_pwa_start_path') === '/admin') {
   window.location.replace('/admin');
-}
-
-if (manifestLink) {
-  manifestLink.href = isAdminRoute ? '/admin-manifest.webmanifest' : '/manifest.webmanifest';
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
