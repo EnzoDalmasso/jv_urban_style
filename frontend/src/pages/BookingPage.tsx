@@ -88,7 +88,7 @@ export function BookingPage() {
         'Hola JV Urban Style, ya reservé mi turno. Envío el comprobante de la seña.'
       )
     : null;
-  const appointmentRequestWhatsappUrl = confirmation
+  const appointmentRequestWhatsappUrl = confirmation && !confirmation.depositRequired
     ? buildWhatsappUrl(
         confirmation.businessWhatsappPhone,
         `Hola JV Urban Style, ya reservé un turno para el ${formatAppointmentDateTime(confirmation.startsAt)}. Queda pendiente de aceptación del dueño.`
@@ -300,9 +300,9 @@ export function BookingPage() {
                 <a className="secondary-button proof-link" href={appointmentRequestWhatsappUrl} target="_blank" rel="noreferrer">
                   Avisar al local por WhatsApp
                 </a>
-              ) : (
+              ) : !confirmation.depositRequired ? (
                 <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
-              )}
+              ) : null}
               {confirmation.depositRequired && (
                 <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
               )}
