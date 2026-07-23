@@ -18,7 +18,7 @@ import {
   updateStaff,
   updateSettings
 } from '../services/admin.service.js';
-import { getPushPublicConfig, savePushSubscription } from '../services/push.service.js';
+import { getPushPublicConfig, savePushSubscription, sendTestPush } from '../services/push.service.js';
 
 export async function getSummary(req: Request, res: Response) {
   const query = z.object({
@@ -120,4 +120,9 @@ export async function getPushConfig(_req: Request, res: Response) {
 export async function postPushSubscription(req: Request, res: Response) {
   const result = await savePushSubscription(req.body, req.header('user-agent'));
   res.status(201).json(result);
+}
+
+export async function postPushTest(_req: Request, res: Response) {
+  const result = await sendTestPush();
+  res.json(result);
 }

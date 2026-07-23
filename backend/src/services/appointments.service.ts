@@ -155,14 +155,16 @@ export async function createAppointment(rawInput: unknown) {
     throw new HttpError(502, 'No se pudieron asociar los servicios al turno.', appointmentServicesError);
   }
 
-  sendNewAppointmentPush({
-    clientName: `${input.client.firstName} ${input.client.lastName}`.trim(),
-    startsAt: appointment.starts_at,
-    services,
-    depositRequired
-  }).catch((error) => {
+  try {
+    await sendNewAppointmentPush({
+      clientName: `${input.client.firstName} ${input.client.lastName}`.trim(),
+      startsAt: appointment.starts_at,
+      services,
+      depositRequired
+    });
+  } catch (error) {
     console.warn('No se pudo enviar la notificacion push de nuevo turno.', error);
-  });
+  }
 
   return {
     appointment: {

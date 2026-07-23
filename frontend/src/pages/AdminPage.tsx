@@ -28,6 +28,7 @@ import {
   saveAdminBusinessHours,
   saveAdminSpecialHours,
   saveAdminPushSubscription,
+  sendAdminPushTest,
   updateAdminAppointmentDepositStatus,
   updateAdminAppointmentStatus,
   updateAdminFixedAppointment,
@@ -654,8 +655,13 @@ export function AdminPage() {
         });
 
       await saveAdminPushSubscription(pin, subscription.toJSON());
+      const testResult = await sendAdminPushTest(pin);
       setPushStatus('enabled');
-      setPushMessage('Notificaciones activas en este dispositivo.');
+      setPushMessage(
+        testResult.sent > 0
+          ? 'Notificaciones activas. Te enviamos una prueba a este dispositivo.'
+          : 'Dispositivo guardado, pero no se pudo enviar la prueba. Revisá permisos/notificaciones del iPhone.'
+      );
     } catch (err) {
       console.error(err);
       setPushStatus('error');

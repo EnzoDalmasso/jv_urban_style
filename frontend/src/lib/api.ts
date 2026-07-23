@@ -253,6 +253,12 @@ export async function saveAdminPushSubscription(pin: string, subscription: PushS
   });
 }
 
+export async function sendAdminPushTest(pin: string) {
+  return adminFetch<{ sent: number; failed: number }>('/api/admin/push-test', pin, {
+    method: 'POST'
+  });
+}
+
 async function adminFetch<T = unknown>(path: string, pin: string, init?: RequestInit) {
   let response: Response;
 

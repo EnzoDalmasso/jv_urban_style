@@ -10,6 +10,7 @@ import {
   patchSettings,
   postFixedAppointment,
   postPushSubscription,
+  postPushTest,
   postService,
   postStaff,
   postSpecialHours,
@@ -28,6 +29,7 @@ adminRouter.use(requireAdmin);
 adminRouter.get('/summary', asyncHandler(getSummary));
 adminRouter.get('/push-config', asyncHandler(getPushConfig));
 adminRouter.post('/push-subscriptions', asyncHandler(postPushSubscription));
+adminRouter.post('/push-test', asyncHandler(postPushTest));
 adminRouter.patch('/settings', asyncHandler(patchSettings));
 adminRouter.post('/services', asyncHandler(postService));
 adminRouter.patch('/services/:id', asyncHandler(patchService));

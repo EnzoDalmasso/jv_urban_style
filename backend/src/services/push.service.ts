@@ -15,7 +15,12 @@ const pushSubscriptionSchema = z.object({
   })
 });
 
-type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;
+type NewAppointmentPushInput = {
+  clientName: string;
+  startsAt: string;
+  services: Array<{ name: string }>;
+  depositRequired: boolean;
+};
 
 type PushSubscriptionRow = {
   id: string;
@@ -24,11 +29,11 @@ type PushSubscriptionRow = {
   auth: string;
 };
 
-type NewAppointmentPushInput = {
-  clientName: string;
-  startsAt: string;
-  services: Array<{ name: string }>;
-  depositRequired: boolean;
+type PushPayload = {
+  title: string;
+  body: string;
+  url: string;
+  tag: string;
 };
 
 let configured = false;
@@ -89,8 +94,31 @@ export async function savePushSubscription(rawInput: unknown, userAgent?: string
 }
 
 export async function sendNewAppointmentPush(input: NewAppointmentPushInput) {
+  const startsAt = DateTime.fromISO(input.startsAt)
+    .setZone(env.BUSINESS_TIMEZONE)
+    .toFormat('dd/MM HH:mm');
+  const serviceText = input.services.map((service) => service.name).join(', ');
+
+  return sendPushToSavedDevices({
+    title: 'Nuevo turno solicitado',
+    body: `${input.clientName} pidio ${serviceText} para ${startsAt}. ${input.depositRequired ? 'Pendiente de sena.' : 'Pendiente de aceptacion.'}`,
+    url: '/admin',
+    tag: `new-appointment-${input.startsAt}`
+  });
+}
+
+export async function sendTestPush() {
+  return sendPushToSavedDevices({
+    title: 'Notificaciones activas',
+    body: 'Este dispositivo ya puede recibir avisos de nuevos turnos.',
+    url: '/admin',
+    tag: `push-test-${Date.now()}`
+  });
+}
+
+async function sendPushToSavedDevices(payloadInput: PushPayload) {
   if (!configureWebPush() || !supabase) {
-    return;
+    return { sent: 0, failed: 0 };
   }
 
   const supabaseClient = supabase;
@@ -100,43 +128,47 @@ export async function sendNewAppointmentPush(input: NewAppointmentPushInput) {
     .returns<PushSubscriptionRow[]>();
 
   if (error) {
-    if (!isMissingSchemaError(error)) {
-      console.warn('No se pudieron obtener suscripciones push.', error);
+    if (isMissingSchemaError(error)) {
+      throw new HttpError(409, 'Falta ejecutar la migracion SQL de notificaciones push en Supabase.', error);
     }
-    return;
+
+    console.warn('No se pudieron obtener suscripciones push.', error);
+    return { sent: 0, failed: 1 };
   }
 
   const subscriptions = data ?? [];
   if (subscriptions.length === 0) {
-    return;
+    return { sent: 0, failed: 0 };
   }
 
-  const startsAt = DateTime.fromISO(input.startsAt)
-    .setZone(env.BUSINESS_TIMEZONE)
-    .toFormat('dd/MM HH:mm');
-  const serviceText = input.services.map((service) => service.name).join(', ');
-  const payload = JSON.stringify({
-    title: 'Nuevo turno solicitado',
-    body: `${input.clientName} pidió ${serviceText} para ${startsAt}. ${input.depositRequired ? 'Pendiente de seña.' : 'Pendiente de aceptación.'}`,
-    url: '/admin',
-    tag: `new-appointment-${input.startsAt}`
-  });
-
-  await Promise.allSettled(subscriptions.map(async (row) => {
-    try {
-      await webPush.sendNotification({
-        endpoint: row.endpoint,
-        keys: {
-          p256dh: row.p256dh,
-          auth: row.auth
-        }
-      }, payload);
-    } catch (error: any) {
-      if (error?.statusCode === 404 || error?.statusCode === 410) {
-        await supabaseClient.from('push_subscriptions').delete().eq('id', row.id);
-      } else {
-        console.warn('No se pudo enviar notificacion push.', error);
+  const payload = JSON.stringify(payloadInput);
+  const results = await Promise.allSettled(subscriptions.map((row) => (
+    webPush.sendNotification({
+      endpoint: row.endpoint,
+      keys: {
+        p256dh: row.p256dh,
+        auth: row.auth
       }
+    }, payload)
+  )));
+
+  await Promise.all(results.map(async (result, index) => {
+    if (result.status === 'fulfilled') {
+      return;
+    }
+
+    const row = subscriptions[index];
+    const error = result.reason;
+
+    if (error?.statusCode === 404 || error?.statusCode === 410) {
+      await supabaseClient.from('push_subscriptions').delete().eq('id', row.id);
+    } else {
+      console.warn('No se pudo enviar notificacion push.', error);
     }
   }));
+
+  return {
+    sent: results.filter((result) => result.status === 'fulfilled').length,
+    failed: results.filter((result) => result.status === 'rejected').length
+  };
 }
