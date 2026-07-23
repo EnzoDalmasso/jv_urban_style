@@ -3,6 +3,13 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles.css';
 
+const isAdminRoute = window.location.pathname.startsWith('/admin');
+const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+
+if (manifestLink) {
+  manifestLink.href = isAdminRoute ? '/admin-manifest.webmanifest' : '/manifest.webmanifest';
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
