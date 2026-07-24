@@ -230,6 +230,10 @@ function AppointmentCard({
     appointment.clientPhone,
     `Hola ${appointment.clientName}, confirmamos tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Te esperamos.`
   );
+  const rejectedUrl = buildWhatsappUrl(
+    appointment.clientPhone,
+    `Hola ${appointment.clientName}, te pedimos disculpas, pero no vamos a poder confirmar tu turno en JV Urban Style para el ${appointmentDate} a las ${appointmentTime}. Si queres, podes solicitar otro horario disponible desde la web. Muchas gracias.`
+  );
 
   return (
     <article className="appointment-card">
@@ -300,7 +304,11 @@ function AppointmentCard({
               <button
                 type="button"
                 disabled={saving === appointment.id}
-                onClick={() => onChangeStatus(appointment.id, 'cancelled')}
+                onClick={() => onChangeStatus(
+                  appointment.id,
+                  'cancelled',
+                  appointment.status === 'pending' || appointment.depositStatus === 'pending' ? rejectedUrl : null
+                )}
               >
                 {appointment.status === 'pending' || appointment.depositStatus === 'pending' ? 'Rechazar' : 'Cancelar'}
               </button>

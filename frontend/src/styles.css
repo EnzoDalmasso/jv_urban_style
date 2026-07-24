@@ -820,11 +820,13 @@ select option {
 }
 
 .inline-fields {
+  min-width: 0;
   align-items: stretch;
   gap: 10px;
 }
 
 .inline-fields label {
+  min-width: 0;
   flex: 1;
 }
 
@@ -1139,6 +1141,44 @@ select option {
 
   .admin-stat {
     min-width: 0;
+  }
+
+  .admin-panel,
+  .hours-row,
+  .fixed-row,
+  .editable-row,
+  .staff-row,
+  .mini-row,
+  .stack-form,
+  .settings-grid,
+  .inline-fields {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .stack-form label,
+  .settings-grid label,
+  .inline-fields label,
+  .hours-row label,
+  .fixed-row label,
+  .editable-row label,
+  .staff-row label {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type="date"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
   }
 }
 
