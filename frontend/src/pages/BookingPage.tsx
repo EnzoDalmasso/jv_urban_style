@@ -421,7 +421,12 @@ export function BookingPage() {
 
       <footer className="site-footer">
         <span>© 2026 JV Urban Style Barbería. Todos los derechos reservados.</span>
-        <span>Desarrollado por <strong>Enzo Dalmasso</strong></span>
+        <span>
+          Desarrollado por{' '}
+          <a href="https://porfolio-enzo-dalmasso.vercel.app/#projects" target="_blank" rel="noreferrer">
+            <strong>Enzo Dalmasso</strong>
+          </a>
+        </span>
       </footer>
     </main>
   );

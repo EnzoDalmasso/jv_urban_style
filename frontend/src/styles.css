@@ -624,6 +624,16 @@ select option {
   color: #f6f1e7;
 }
 
+.site-footer a {
+  color: inherit;
+  text-decoration-color: rgba(215, 178, 93, 0.55);
+  text-underline-offset: 3px;
+}
+
+.site-footer a:hover {
+  color: #d7b25d;
+}
+
 .admin-shell {
   width: min(1280px, calc(100% - 28px));
   padding: 32px 0 54px;
