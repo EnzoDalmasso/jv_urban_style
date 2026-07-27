@@ -20,6 +20,7 @@ const booleanEnv = z.preprocess((value) => {
 }, z.boolean().optional());
 
 const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(4000),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   DEMO_MODE: booleanEnv,
@@ -37,6 +38,10 @@ const parsedEnv = envSchema.parse(process.env);
 
 export const env = {
   ...parsedEnv,
+  ALLOWED_ORIGINS: parsedEnv.CORS_ORIGIN
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean),
   DEMO_MODE: parsedEnv.DEMO_MODE
     ?? (!parsedEnv.SUPABASE_URL || !parsedEnv.SUPABASE_SERVICE_ROLE_KEY)
 };

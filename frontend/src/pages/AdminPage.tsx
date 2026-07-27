@@ -330,7 +330,10 @@ function AppointmentCard({
 }
 
 export function AdminPage() {
-  const [pin, setPin] = useState(() => localStorage.getItem('adminPin') ?? '');
+  const [pin, setPin] = useState(() => {
+    localStorage.removeItem('adminPin');
+    return sessionStorage.getItem('adminPin') ?? '';
+  });
   const [pinDraft, setPinDraft] = useState('');
   const [date, setDate] = useState(todayISO);
   const [summary, setSummary] = useState<AdminSummary | null>(null);
@@ -356,7 +359,7 @@ export function AdminPage() {
       .catch((err: Error) => {
         setError(err.message);
         if (err.message.toLowerCase().includes('pin')) {
-          localStorage.removeItem('adminPin');
+          sessionStorage.removeItem('adminPin');
           setPin('');
         }
       })
@@ -388,12 +391,12 @@ export function AdminPage() {
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    localStorage.setItem('adminPin', pinDraft);
+    sessionStorage.setItem('adminPin', pinDraft);
     setPin(pinDraft);
   }
 
   function logout() {
-    localStorage.removeItem('adminPin');
+    sessionStorage.removeItem('adminPin');
     setPin('');
     setSummary(null);
   }

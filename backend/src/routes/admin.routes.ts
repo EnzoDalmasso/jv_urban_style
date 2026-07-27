@@ -22,9 +22,15 @@ import {
 } from '../controllers/admin.controller.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 export const adminRouter = Router();
 
+adminRouter.use(rateLimit({
+  keyPrefix: 'admin',
+  windowMs: 15 * 60 * 1000,
+  max: 120
+}));
 adminRouter.use(requireAdmin);
 adminRouter.get('/summary', asyncHandler(getSummary));
 adminRouter.get('/push-config', asyncHandler(getPushConfig));
