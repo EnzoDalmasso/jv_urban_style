@@ -869,87 +869,114 @@ export function AdminPage() {
 
                   {(summary.fixedAppointments ?? []).map((fixedAppointment) => (
                     <div className="fixed-row" key={fixedAppointment.id}>
-                      <select
-                        value={fixedAppointment.staff_id}
-                        onChange={(event) => patchSummary({
-                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                            item.id === fixedAppointment.id ? { ...item, staff_id: event.target.value } : item
-                          ))
-                        })}
-                      >
-                        {summary.staff.map((staff) => (
-                          <option key={staff.id} value={staff.id}>{staff.full_name}</option>
-                        ))}
-                      </select>
-                      <input
-                        value={fixedAppointment.client_name}
-                        onChange={(event) => patchSummary({
-                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                            item.id === fixedAppointment.id ? { ...item, client_name: event.target.value } : item
-                          ))
-                        })}
-                      />
-                      <select
-                        value={fixedAppointment.day_of_week}
-                        onChange={(event) => patchSummary({
-                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                            item.id === fixedAppointment.id ? { ...item, day_of_week: Number(event.target.value) } : item
-                          ))
-                        })}
-                      >
-                        {dayLabels.map((label, index) => (
-                          <option key={label} value={index}>{label}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="time"
-                        value={shortTime(fixedAppointment.starts_at)}
-                        onChange={(event) => patchSummary({
-                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                            item.id === fixedAppointment.id ? { ...item, starts_at: event.target.value } : item
-                          ))
-                        })}
-                      />
-                      <input
-                        type="number"
-                        min={5}
-                        value={fixedAppointment.duration_minutes}
-                        onChange={(event) => patchSummary({
-                          fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                            item.id === fixedAppointment.id ? { ...item, duration_minutes: Number(event.target.value) } : item
-                          ))
-                        })}
-                      />
-                      <label className="checkbox-row compact-check">
-                        <input
-                          type="checkbox"
-                          checked={fixedAppointment.is_active}
-                          onChange={(event) => patchSummary({
-                            fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
-                              item.id === fixedAppointment.id ? { ...item, is_active: event.target.checked } : item
-                            ))
-                          })}
-                        />
-                        Activo
-                      </label>
-                      <button
-                        className="icon-button"
-                        type="button"
-                        onClick={() => saveFixedAppointment(fixedAppointment)}
-                        disabled={saving === fixedAppointment.id}
-                        aria-label="Guardar turno fijo"
-                      >
-                        <Save aria-hidden="true" />
-                      </button>
-                      <button
-                        className="icon-button danger"
-                        type="button"
-                        onClick={() => removeFixedAppointment(fixedAppointment)}
-                        disabled={saving === fixedAppointment.id}
-                        aria-label="Quitar turno fijo"
-                      >
-                        <Minus aria-hidden="true" />
-                      </button>
+                      <div className="fixed-row-header">
+                        <div>
+                          <strong>{fixedAppointment.client_name || 'Cliente fijo'}</strong>
+                          <span>{dayLabels[fixedAppointment.day_of_week]} · {shortTime(fixedAppointment.starts_at)} · {fixedAppointment.duration_minutes} min</span>
+                        </div>
+                        <label className="checkbox-row fixed-active-check">
+                          <input
+                            type="checkbox"
+                            checked={fixedAppointment.is_active}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, is_active: event.target.checked } : item
+                              ))
+                            })}
+                          />
+                          Activo
+                        </label>
+                      </div>
+
+                      <div className="fixed-fields">
+                        <label>
+                          Profesional
+                          <select
+                            value={fixedAppointment.staff_id}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, staff_id: event.target.value } : item
+                              ))
+                            })}
+                          >
+                            {summary.staff.map((staff) => (
+                              <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Cliente
+                          <input
+                            value={fixedAppointment.client_name}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, client_name: event.target.value } : item
+                              ))
+                            })}
+                          />
+                        </label>
+                        <label>
+                          Día
+                          <select
+                            value={fixedAppointment.day_of_week}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, day_of_week: Number(event.target.value) } : item
+                              ))
+                            })}
+                          >
+                            {dayLabels.map((label, index) => (
+                              <option key={label} value={index}>{label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Hora
+                          <input
+                            type="time"
+                            value={shortTime(fixedAppointment.starts_at)}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, starts_at: event.target.value } : item
+                              ))
+                            })}
+                          />
+                        </label>
+                        <label>
+                          Duración
+                          <input
+                            type="number"
+                            min={5}
+                            value={fixedAppointment.duration_minutes}
+                            onChange={(event) => patchSummary({
+                              fixedAppointments: (summary.fixedAppointments ?? []).map((item) => (
+                                item.id === fixedAppointment.id ? { ...item, duration_minutes: Number(event.target.value) } : item
+                              ))
+                            })}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="fixed-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() => saveFixedAppointment(fixedAppointment)}
+                          disabled={saving === fixedAppointment.id}
+                        >
+                          <Save aria-hidden="true" />
+                          Guardar
+                        </button>
+                        <button
+                          className="secondary-button danger"
+                          type="button"
+                          onClick={() => removeFixedAppointment(fixedAppointment)}
+                          disabled={saving === fixedAppointment.id}
+                        >
+                          <Minus aria-hidden="true" />
+                          Quitar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

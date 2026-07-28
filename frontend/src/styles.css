@@ -814,6 +814,62 @@ select option {
   color: #a9a39a;
 }
 
+.fixed-list {
+  margin-top: 12px;
+}
+
+.fixed-row {
+  gap: 14px;
+  padding: 14px;
+}
+
+.fixed-row-header,
+.fixed-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fixed-row-header strong {
+  display: block;
+  color: #f6f1e7;
+  font-size: 1.02rem;
+}
+
+.fixed-row-header span {
+  color: #a9a39a;
+  font-size: 0.9rem;
+}
+
+.fixed-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(180px, 1.3fr) minmax(120px, 0.8fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr);
+  gap: 10px;
+}
+
+.fixed-fields label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  color: #d9d2c6;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.fixed-active-check {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+
+.fixed-actions {
+  justify-content: flex-end;
+}
+
+.secondary-button.danger {
+  color: #ff8d9b;
+}
+
 .checkbox-row {
   flex-direction: row;
   gap: 8px;
@@ -1151,6 +1207,25 @@ select option {
 
   .admin-stat {
     min-width: 0;
+  }
+
+  .fixed-row-header,
+  .fixed-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fixed-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .fixed-active-check {
+    width: 100%;
+  }
+
+  .fixed-actions .secondary-button {
+    width: 100%;
+    justify-content: center;
   }
 
   .admin-panel,
