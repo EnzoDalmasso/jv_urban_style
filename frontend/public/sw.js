@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jv-urban-style-v2';
+const CACHE_NAME = 'jv-urban-style-v4';
 const STATIC_ASSETS = [
   '/',
   '/admin',
@@ -47,10 +47,10 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match('/'))
+        .catch(() => caches.match(request).then((cached) => cached ?? caches.match('/')))
     );
     return;
   }
@@ -71,6 +71,12 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('push', (event) => {
