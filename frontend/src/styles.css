@@ -823,7 +823,18 @@ select option {
   padding: 14px;
 }
 
-.fixed-row-header,
+.fixed-row-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fixed-row-header > div {
+  min-width: 0;
+}
+
 .fixed-actions {
   display: flex;
   align-items: center;
@@ -833,11 +844,14 @@ select option {
 
 .fixed-row-header strong {
   display: block;
+  overflow-wrap: anywhere;
   color: #f6f1e7;
   font-size: 1.02rem;
 }
 
 .fixed-row-header span {
+  display: block;
+  white-space: nowrap;
   color: #a9a39a;
   font-size: 0.9rem;
 }
@@ -1108,11 +1122,6 @@ select option {
 
   .hours-row {
     grid-template-columns: 140px 1fr 120px 120px 100px 46px;
-    align-items: end;
-  }
-
-  .fixed-row {
-    grid-template-columns: 1fr 1.2fr 130px 110px 110px 100px 46px 46px;
     align-items: end;
   }
 
