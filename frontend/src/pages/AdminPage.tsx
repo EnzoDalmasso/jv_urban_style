@@ -522,7 +522,8 @@ export function AdminPage() {
 
   async function addSpecialHours(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     await runAdminAction('special', async () => {
       const startDate = String(formData.get('date'));
       const endDate = specialMode === 'vacation'
@@ -542,7 +543,7 @@ export function AdminPage() {
         reason
       })));
 
-      event.currentTarget.reset();
+      form.reset();
       setSpecialMode('hours');
       if (startDate !== date) {
         setDate(startDate);
@@ -561,7 +562,8 @@ export function AdminPage() {
 
   async function addFixedAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const staffId = String(formData.get('staffId') || '');
 
     if (!staffId) {
@@ -579,7 +581,7 @@ export function AdminPage() {
         note: String(formData.get('note') ?? ''),
         isActive: true
       });
-      event.currentTarget.reset();
+      form.reset();
       await reload();
     });
   }
