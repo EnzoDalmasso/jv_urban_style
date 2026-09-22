@@ -33,6 +33,9 @@ app.get('/health', (_req, res) => {
 app.use('/api', apiRouter);
 app.use(errorHandler);
 
+// Vercel detecta Express por este default export; server.ts sigue siendo el entrypoint local/Render.
+export default app;
+
 function normalizeOrigin(origin: string) {
   return origin.replace(/\/$/, '');
 }
