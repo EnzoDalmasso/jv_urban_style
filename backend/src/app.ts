@@ -1,12 +1,9 @@
 import cors from 'cors';
 import express from 'express';
-import * as helmetModule from 'helmet';
+import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
-
-// Namespace import: el build de Vercel resuelve los tipos CJS de helmet, donde el default import no es invocable.
-const helmet = helmetModule.default;
 
 export const app = express();
 
@@ -36,7 +33,7 @@ app.get('/health', (_req, res) => {
 app.use('/api', apiRouter);
 app.use(errorHandler);
 
-// Vercel detecta Express por este default export; server.ts sigue siendo el entrypoint local/Render.
+// Default export para el entrypoint de Vercel (backend/app.js); server.ts sigue siendo el entrypoint local/Render.
 export default app;
 
 function normalizeOrigin(origin: string) {
