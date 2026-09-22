@@ -1,9 +1,12 @@
 import cors from 'cors';
 import express from 'express';
-import helmet from 'helmet';
+import * as helmetModule from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
+
+// Namespace import: el build de Vercel resuelve los tipos CJS de helmet, donde el default import no es invocable.
+const helmet = helmetModule.default;
 
 export const app = express();
 
