@@ -1,0 +1,21 @@
+# Evita que Supabase (plan Free) pause el proyecto por 7 dias de inactividad.
+# Cada 2 dias llama a un endpoint publico del backend en Render que consulta Supabase.
+# El primer request puede tardar ~1 minuto si Render tiene la instancia dormida.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '0 12 */2 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Query backend (Render -> Supabase)
+        run: |
+          curl -sS --fail --max-time 120 --retry 3 --retry-delay 20 --retry-all-errors \
+            -o response.json https://jv-urban-style.onrender.com/api/services
+          grep -q '"services"' response.json
+          echo "OK: backend y Supabase respondieron"
