@@ -10,6 +10,7 @@ on:
 
 permissions:
   actions: write
+  contents: write
 
 jobs:
   ping:
@@ -22,6 +23,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/supabase-keepalive.yml/enable"
+
+      # Respaldo: si el ultimo commit tiene mas de 50 dias, hace un commit vacio
+      # para que GitHub registre actividad. [skip render] evita un redeploy en Render.
+      - uses: actions/checkout@v4
+
+      - name: Commit if repo inactive for 50+ days
+        run: |
+          last=$(git log -1 --format=%ct)
+          days=$(( ($(date +%s) - last) / 86400 ))
+          echo "Dias desde el ultimo commit: $days"
+          if [ "$days" -ge 50 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: keep scheduled workflows active [skip render]"
+            git push
+          fi
 
       - name: Query backend (Render -> Supabase)
         run: |
