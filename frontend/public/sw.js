@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jv-urban-style-v4';
+const CACHE_NAME = 'jv-urban-style-v5';
 const STATIC_ASSETS = [
   '/',
   '/admin',
@@ -34,6 +34,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // Solo manejamos el propio sitio: la API, Google Fonts o el traductor de Chrome van directo por el navegador.
+  if (url.origin !== self.location.origin) {
     return;
   }
 
