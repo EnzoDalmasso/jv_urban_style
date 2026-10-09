@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
+import { HttpError } from './utils/httpError.js';
 
 export const app = express();
 
@@ -18,7 +19,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    return callback(new Error('CORS origin denied.'));
+    return callback(new HttpError(403, 'Origen no permitido.'));
   },
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-admin-pin'],

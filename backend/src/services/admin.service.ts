@@ -30,29 +30,29 @@ export const updateSettingsSchema = z.object({
 });
 
 export const updateServiceSchema = z.object({
-  name: z.string().trim().min(2).optional(),
-  description: z.string().trim().optional().nullable(),
-  durationMinutes: z.coerce.number().int().positive().optional(),
-  price: z.coerce.number().min(0).optional(),
+  name: z.string().trim().min(2).max(80).optional(),
+  description: z.string().trim().max(500).optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(600).optional(),
+  price: z.coerce.number().min(0).max(100000000).optional(),
   isActive: z.boolean().optional()
 });
 
 export const createServiceSchema = z.object({
-  name: z.string().trim().min(2),
-  description: z.string().trim().optional().nullable(),
-  durationMinutes: z.coerce.number().int().positive().default(45),
-  price: z.coerce.number().min(0).default(0)
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(500).optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(600).default(45),
+  price: z.coerce.number().min(0).max(100000000).default(0)
 });
 
 export const updateStaffSchema = z.object({
-  fullName: z.string().trim().min(2).optional(),
-  role: z.string().trim().min(2).optional(),
+  fullName: z.string().trim().min(2).max(80).optional(),
+  role: z.string().trim().min(2).max(40).optional(),
   isActive: z.boolean().optional()
 });
 
 export const createStaffSchema = z.object({
-  fullName: z.string().trim().min(2),
-  role: z.string().trim().min(2).default('barber')
+  fullName: z.string().trim().min(2).max(80),
+  role: z.string().trim().min(2).max(40).default('barber')
 });
 
 export const saveBusinessHoursSchema = z.object({
@@ -69,16 +69,16 @@ export const saveSpecialHoursSchema = z.object({
   opensAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
   closesAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
   isClosed: z.boolean(),
-  reason: z.string().trim().optional().nullable()
+  reason: z.string().trim().max(200).optional().nullable()
 });
 
 export const createFixedAppointmentSchema = z.object({
   staffId: z.string().uuid(),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startsAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
-  durationMinutes: z.coerce.number().int().positive().default(30),
-  clientName: z.string().trim().min(2),
-  note: z.string().trim().optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(600).default(30),
+  clientName: z.string().trim().min(2).max(80),
+  note: z.string().trim().max(500).optional().nullable(),
   isActive: z.boolean().optional()
 });
 
@@ -86,9 +86,9 @@ export const updateFixedAppointmentSchema = z.object({
   staffId: z.string().uuid().optional(),
   dayOfWeek: z.coerce.number().int().min(0).max(6).optional(),
   startsAt: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
-  durationMinutes: z.coerce.number().int().positive().optional(),
-  clientName: z.string().trim().min(2).optional(),
-  note: z.string().trim().optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(600).optional(),
+  clientName: z.string().trim().min(2).max(80).optional(),
+  note: z.string().trim().max(500).optional().nullable(),
   isActive: z.boolean().optional()
 });
 

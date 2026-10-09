@@ -38,10 +38,7 @@ for each row execute function public.set_updated_at();
 
 alter table public.fixed_appointments enable row level security;
 
+-- Sin lectura publica: incluye client_name y note. El backend lee con la service role.
 drop policy if exists "Public can read active fixed appointments" on public.fixed_appointments;
-create policy "Public can read active fixed appointments"
-on public.fixed_appointments for select
-to anon, authenticated
-using (is_active = true);
 
 notify pgrst, 'reload schema';

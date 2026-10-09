@@ -9,17 +9,17 @@ import { isMissingSchemaError } from '../utils/supabaseError.js';
 import { sendNewAppointmentPush } from './push.service.js';
 
 const createAppointmentSchema = z.object({
-  serviceIds: z.array(z.string().uuid()).min(1),
+  serviceIds: z.array(z.string().uuid()).min(1).max(5),
   staffId: z.string().uuid(),
   startsAt: z.string().datetime(),
   client: z.object({
-    firstName: z.string().trim().min(2),
-    lastName: z.string().trim().min(2),
-    phone: z.string().trim().min(6),
-    email: z.string().trim().email().optional().or(z.literal('')),
-    notes: z.string().trim().optional()
+    firstName: z.string().trim().min(2).max(60),
+    lastName: z.string().trim().min(2).max(60),
+    phone: z.string().trim().min(6).max(25),
+    email: z.string().trim().email().max(120).optional().or(z.literal('')),
+    notes: z.string().trim().max(500).optional()
   }),
-  notes: z.string().trim().optional()
+  notes: z.string().trim().max(500).optional()
 });
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;

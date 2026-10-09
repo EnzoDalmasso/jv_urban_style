@@ -398,15 +398,15 @@ export function BookingPage() {
 
               <label>
                 Nombre
-                <input name="firstName" required minLength={2} />
+                <input name="firstName" required minLength={2} maxLength={60} />
               </label>
               <label>
                 Apellido
-                <input name="lastName" required minLength={2} />
+                <input name="lastName" required minLength={2} maxLength={60} />
               </label>
               <label>
                 Número de teléfono
-                <input name="phone" required minLength={6} />
+                <input name="phone" required minLength={6} maxLength={25} />
               </label>
 
               {error && <p className="error-text">{error}</p>}

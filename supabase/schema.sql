@@ -280,11 +280,8 @@ on public.special_business_hours for select
 to anon, authenticated
 using (true);
 
+-- Sin lectura publica: incluye client_name y note. El backend lee con la service role.
 drop policy if exists "Public can read active fixed appointments" on public.fixed_appointments;
-create policy "Public can read active fixed appointments"
-on public.fixed_appointments for select
-to anon, authenticated
-using (is_active = true);
 
 -- Reservas, clientes, bloqueos y dashboard deben escribirse/consultarse via backend
 -- usando SUPABASE_SERVICE_ROLE_KEY. La service role bypassa RLS.
