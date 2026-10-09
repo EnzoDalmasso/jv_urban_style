@@ -26,7 +26,7 @@ jobs:
 
       # Respaldo: si el ultimo commit tiene mas de 50 dias, hace un commit vacio
       # para que GitHub registre actividad. [skip render] evita un redeploy en Render.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Commit if repo inactive for 50+ days
         run: |
