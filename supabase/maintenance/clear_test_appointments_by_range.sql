@@ -7,8 +7,8 @@
 --   select
 --     date '2026-07-22' as start_date,
 --     date '2026-07-31' as end_date,
---     array['3471314256', '5493471314256']::text[] as test_phones,
---     array['enzo dalmasso', 'enzo villarroel', 'joel villarroel']::text[] as test_names
+--     array['3510000000', '5493510000000']::text[] as test_phones,
+--     array['cliente prueba']::text[] as test_names
 -- )
 -- select appointment.id, appointment.starts_at, appointment.status, client.first_name, client.last_name, client.phone
 -- from public.appointments appointment
@@ -29,13 +29,11 @@ with cleanup_settings as (
     date '2026-07-22' as start_date,
     date '2026-07-31' as end_date,
     array[
-      '3471314256',
-      '5493471314256'
+      '3510000000',
+      '5493510000000'
     ]::text[] as test_phones,
     array[
-      'enzo dalmasso',
-      'enzo villarroel',
-      'joel villarroel'
+      'cliente prueba'
     ]::text[] as test_names
 ),
 target_appointments as (
