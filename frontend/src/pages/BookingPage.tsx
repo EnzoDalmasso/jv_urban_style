@@ -1,21 +1,21 @@
-import { CalendarClock, CheckCircle2, ChevronDown, Scissors } from 'lucide-react';
+import { CalendarDays, MessageCircle, Scissors } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
-import heroImage from '../assets/barbershop-lounge-hero.png';
-import { BrandLogo } from '../components/BrandLogo';
+import heroImage from '../assets/barbershop-lounge-hero.webp';
 import { DateTimeSelector } from '../components/DateTimeSelector';
+import { BookingStep } from '../components/site/BookingStep';
+import { HoursSection } from '../components/site/HoursSection';
+import { Reveal } from '../components/site/Reveal';
+import { ServicesBoard } from '../components/site/ServicesBoard';
+import { SiteFooter } from '../components/site/SiteFooter';
+import { SiteHeader } from '../components/site/SiteHeader';
 import { createAppointment, fetchPublicSchedule, fetchServices } from '../lib/api';
-import type { AvailabilitySlot, BusinessHours, CreateAppointmentResponse, PublicSchedule, Service } from '../types';
+import { formatAppointmentDateTime, formatLongDate, formatPrice } from '../lib/format';
+import { describeToday } from '../lib/schedule';
+import { scrollToSection } from '../lib/scroll';
+import type { AvailabilitySlot, CreateAppointmentResponse, PublicSchedule, Service } from '../types';
+import '../site.css';
 
-const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-type BookingStep = 1 | 2 | 3;
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0
-  }).format(Number(price));
-}
+type BookingStepNumber = 1 | 2 | 3;
 
 function buildWhatsappUrl(phone: string | undefined, message: string) {
   const normalizedPhone = (phone ?? '').replace(/\D/g, '');
@@ -25,46 +25,6 @@ function buildWhatsappUrl(phone: string | undefined, message: string) {
   }
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
-}
-
-function formatAppointmentDateTime(value: string | undefined) {
-  if (!value) {
-    return '';
-  }
-
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(value));
-}
-
-function formatHour(value: string) {
-  return value.slice(0, 5);
-}
-
-function formatScheduleDate(value: string) {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: 'short'
-  }).format(new Date(`${value}T12:00:00`));
-}
-
-function summarizeBusinessHours(hours: BusinessHours[]) {
-  const globalHours = hours
-    .filter((hour) => hour.staff_id === null)
-    .sort((a, b) => a.day_of_week - b.day_of_week);
-
-  if (globalHours.length === 0) {
-    return [];
-  }
-
-  return globalHours.map((hour) => ({
-    label: dayLabels[hour.day_of_week],
-    value: hour.is_closed ? 'Cerrado' : `${formatHour(hour.opens_at)} - ${formatHour(hour.closes_at)}`
-  }));
 }
 
 export function BookingPage() {
@@ -77,8 +37,7 @@ export function BookingPage() {
   const [confirmation, setConfirmation] = useState<CreateAppointmentResponse['appointment'] | null>(null);
   const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
   const [schedule, setSchedule] = useState<PublicSchedule | null>(null);
-  const [showSchedule, setShowSchedule] = useState(false);
-  const [openStep, setOpenStep] = useState<BookingStep>(1);
+  const [openStep, setOpenStep] = useState<BookingStepNumber>(1);
   const transferDetails = confirmation?.transfer ?? {
     holder: 'JV Urban Style Barbería',
     alias: 'JVURBANSTYLE',
@@ -100,6 +59,7 @@ export function BookingPage() {
   useEffect(() => {
     fetchServices()
       .then((response) => setServices(response.services))
+      .catch(() => setServices([]))
       .finally(() => setLoadingServices(false));
 
     fetchPublicSchedule()
@@ -107,8 +67,8 @@ export function BookingPage() {
       .catch(() => setSchedule(null));
   }, []);
 
-  const weeklyHours = schedule ? summarizeBusinessHours(schedule.businessHours) : [];
-  const specialHours = schedule?.specialHours ?? [];
+  const todayLabel = schedule ? describeToday(schedule) : null;
+  const selectedService = services.find((service) => selectedServiceIds.includes(service.id));
 
   function toggleService(serviceId: string) {
     setSelectedSlot(undefined);
@@ -119,6 +79,14 @@ export function BookingPage() {
       setOpenStep(next.length > 0 ? 2 : 1);
       return next;
     });
+  }
+
+  function chooseService(serviceId: string) {
+    setSelectedSlot(undefined);
+    setConfirmation(null);
+    setSelectedServiceIds([serviceId]);
+    setOpenStep(2);
+    scrollToSection('reservar');
   }
 
   function selectSlot(slot: AvailabilitySlot | undefined) {
@@ -137,27 +105,17 @@ export function BookingPage() {
     setOpenStep(1);
   }
 
-  function scrollToBooking() {
-    document.getElementById('booking')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-
-    if (window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
     if (!selectedSlot) {
-      setError('Elegir un horario disponible.');
+      setError('Elegí un horario disponible.');
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     setSubmitting(true);
 
     try {
@@ -175,6 +133,7 @@ export function BookingPage() {
       setConfirmation(response.appointment);
       setSelectedSlot(undefined);
       setAvailabilityRefreshToken((current) => current + 1);
+      form.reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pudimos crear el turno.');
     } finally {
@@ -183,251 +142,226 @@ export function BookingPage() {
   }
 
   return (
-    <main className="client-shell">
-      <section
-        className="hero lounge-hero"
-        style={{ backgroundImage: `linear-gradient(90deg, rgba(8, 9, 8, 0.94) 0%, rgba(8, 9, 8, 0.72) 42%, rgba(8, 9, 8, 0.12) 100%), url(${heroImage})` }}
-      >
-        <div className="browser-dots" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-        <header className="client-nav">
-          <BrandLogo compact />
-          <button
-            className="nav-action"
-            type="button"
-            aria-expanded={showSchedule}
-            onClick={() => setShowSchedule((current) => !current)}
-          >
-            <CalendarClock aria-hidden="true" />
-            Horarios semanales
-          </button>
-        </header>
-        <div className="hero-copy">
-          <p className="eyebrow">JV Urban Style</p>
-          <h1>Más que un corte.</h1>
-          <p>
-            Elegí tu servicio, encontrá un horario real y dejá tu turno listo con una experiencia
-            premium, simple y sin vueltas.
-          </p>
-          <div className="hero-actions">
-            <button className="primary-cta" type="button" onClick={scrollToBooking}>
-              <Scissors aria-hidden="true" />
-              Reservar turno
-            </button>
-          </div>
-          {showSchedule && (
-            <div className="schedule-popover" role="region" aria-label="Horarios del local">
-              <strong>Horarios del local</strong>
-              {weeklyHours.length > 0 ? (
-                <dl>
-                  {weeklyHours.map((hour) => (
-                    <div key={hour.label}>
-                      <dt>{hour.label}</dt>
-                      <dd>{hour.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p>Los horarios se muestran al configurarlos en el panel admin.</p>
-              )}
+    <div className="site">
+      <SiteHeader todayLabel={todayLabel} />
 
-              {specialHours.length > 0 && (
-                <div className="special-schedule">
-                  <span>Feriados o vacaciones</span>
-                  {specialHours.slice(0, 4).map((hour) => (
-                    <p key={hour.id}>
-                      {formatScheduleDate(hour.date)}: {hour.is_closed
-                        ? (hour.reason || 'Cerrado')
-                        : `${formatHour(hour.opens_at)} - ${formatHour(hour.closes_at)}`}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+      <main className="site-main">
+        <section className="site-hero" id="inicio" aria-labelledby="hero-title">
+          <img className="site-hero-image" src={heroImage} alt="" fetchPriority="high" />
+          <div className="site-hero-shade" aria-hidden="true" />
 
-      <section className="booking-layout accordion-layout" id="booking">
-        <div className={openStep === 1 ? 'booking-panel accordion-panel open attention-step' : 'booking-panel accordion-panel'} aria-labelledby="services-title">
-          <button
-            className="accordion-heading"
-            type="button"
-            aria-expanded={openStep === 1}
-            onClick={() => setOpenStep(1)}
-          >
-            <span>
-              <p className="eyebrow">Paso 1</p>
-              <h2 id="services-title">Seleccioná un servicio</h2>
-            </span>
-            <span className="accordion-icons">
-              <Scissors aria-hidden="true" />
-              <ChevronDown aria-hidden="true" />
-            </span>
-          </button>
-
-          {openStep === 1 && (
-            <div className="accordion-content service-grid">
-              {loadingServices && <p className="muted">Cargando servicios...</p>}
-
-              {services.map((service) => {
-                const active = selectedServiceIds.includes(service.id);
-
-                return (
-                  <button
-                    className={active ? 'service-card active' : 'service-card'}
-                    key={service.id}
-                    type="button"
-                    onClick={() => toggleService(service.id)}
-                  >
-                    <span className="service-topline">
-                      <strong>{service.name}</strong>
-                      {active && <CheckCircle2 aria-label="Seleccionado" />}
-                    </span>
-                    <span>{service.description}</span>
-                    <span className="service-meta">
-                      {service.duration_minutes} min - {formatPrice(service.price)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <DateTimeSelector
-          serviceIds={selectedServiceIds}
-          selectedSlot={selectedSlot}
-          onSelectSlot={selectSlot}
-          refreshToken={availabilityRefreshToken}
-          isOpen={openStep === 2}
-          isDisabled={selectedServiceIds.length === 0}
-          onToggle={() => {
-            if (selectedServiceIds.length > 0) {
-              setOpenStep(2);
-            }
-          }}
-        />
-
-        <aside className={openStep === 3 ? 'summary-panel accordion-panel open' : 'summary-panel accordion-panel'} aria-label="Resumen de reserva">
-          <button
-            className="accordion-heading"
-            type="button"
-            aria-expanded={openStep === 3}
-            disabled={!selectedSlot && !confirmation}
-            onClick={() => {
-              if (selectedSlot || confirmation) {
-                setOpenStep(3);
-              }
-            }}
-          >
-            <span>
-              <p className="eyebrow">Paso 3</p>
-              <h2>Datos del cliente</h2>
-            </span>
-            <span className="accordion-icons">
-              <CheckCircle2 aria-hidden="true" />
-              <ChevronDown aria-hidden="true" />
-            </span>
-          </button>
-
-          {openStep === 3 && confirmation ? (
-            <div className="summary-box">
-              <span>Reserva pendiente</span>
-              <p>Total: {formatPrice(confirmation.totalPrice)}</p>
-              {appointmentRequestWhatsappUrl ? (
-                <a className="secondary-button proof-link" href={appointmentRequestWhatsappUrl} target="_blank" rel="noreferrer">
-                  Avisar al local por WhatsApp
-                </a>
-              ) : !confirmation.depositRequired ? (
-                <p className="muted">El local debe configurar su WhatsApp en el panel admin.</p>
-              ) : null}
-              {confirmation.depositRequired && (
-                <p>Seña sugerida: {formatPrice(confirmation.depositAmount)}</p>
-              )}
-              {confirmation.depositRequired ? (
-                <div className="transfer-details">
-                  <strong>{confirmation.staffName}</strong>
-                  <strong>Datos para transferir</strong>
-                  <dl>
-                    <div>
-                      <dt>Titular</dt>
-                      <dd>{transferDetails.holder}</dd>
-                    </div>
-                    <div>
-                      <dt>Alias</dt>
-                      <dd>{transferDetails.alias}</dd>
-                    </div>
-                    <div>
-                      <dt>CBU/CVU</dt>
-                      <dd>{transferDetails.cbu}</dd>
-                    </div>
-                  </dl>
-                  {proofWhatsappUrl ? (
-                    <a className="secondary-button proof-link" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
-                      Enviar comprobante por WhatsApp
-                    </a>
-                  ) : null}
-                  <button className="secondary-button" type="button" onClick={startNewBooking}>
-                    Hacer otra reserva
-                  </button>
-                </div>
-              ) : (
-                <div className="summary-actions">
-                  <button className="secondary-button" type="button" onClick={startNewBooking}>
-                    Hacer otra reserva
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : openStep === 3 ? (
-            <form className="stack-form" onSubmit={handleSubmit}>
-              <div className="selected-slot-copy">
-                {selectedSlot ? (
-                  <>
-                    <span>{selectedSlot.time}</span>
-                    <strong>{selectedSlot.staffName}</strong>
-                  </>
-                ) : (
-                  <p className="muted">El resumen aparece cuando elijas un horario.</p>
-                )}
-              </div>
-
-              <label>
-                Nombre
-                <input name="firstName" required minLength={2} maxLength={60} />
-              </label>
-              <label>
-                Apellido
-                <input name="lastName" required minLength={2} maxLength={60} />
-              </label>
-              <label>
-                Número de teléfono
-                <input name="phone" required minLength={6} maxLength={25} />
-              </label>
-
-              {error && <p className="error-text">{error}</p>}
-
-              <button className="primary-cta form-cta" type="submit" disabled={submitting || !selectedSlot}>
-                {submitting ? 'Reservando...' : 'Confirmar turno'}
+          <div className="site-container site-hero-content">
+            <h1 id="hero-title">
+              <span>Más que</span>
+              <span>un corte.</span>
+            </h1>
+            <p className="site-hero-lead">
+              Elegí el servicio, mirá los horarios libres de cada barbero y dejá tu turno pedido en un minuto.
+            </p>
+            <div className="site-hero-actions">
+              <button className="site-button" type="button" onClick={() => scrollToSection('reservar')}>
+                <Scissors aria-hidden="true" />
+                Reservar turno
               </button>
-            </form>
-          ) : null}
-        </aside>
-      </section>
+              <a className="site-button site-button-ghost" href="#servicios">
+                Ver servicios y precios
+              </a>
+            </div>
+          </div>
 
-      <footer className="site-footer">
-        <span>© 2026 JV Urban Style Barbería. Todos los derechos reservados.</span>
-        <span>
-          Desarrollado por{' '}
-          <a href="https://porfolio-enzo-dalmasso.vercel.app/#projects" target="_blank" rel="noreferrer">
-            <strong>Enzo Dalmasso</strong>
-          </a>
-        </span>
-      </footer>
-    </main>
+          {todayLabel && (
+            <div className="site-hero-strip">
+              <div className="site-container">
+                <a href="#horarios">
+                  <CalendarDays aria-hidden="true" />
+                  {todayLabel}
+                </a>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <Reveal>
+          <ServicesBoard services={services} loading={loadingServices} onChoose={chooseService} />
+        </Reveal>
+
+        <section className="site-section site-booking" id="reservar" aria-labelledby="reservar-title">
+          <div className="site-container site-booking-grid">
+            <header className="site-section-header site-booking-intro">
+              <h2 id="reservar-title">Reservá tu turno</h2>
+              <p>
+                Los horarios se calculan con la agenda real del local. El turno queda pedido y el local
+                lo confirma por WhatsApp.
+              </p>
+            </header>
+
+            <div className="booking-steps">
+              <BookingStep
+                number={1}
+                title="Servicio"
+                summary={selectedService ? `${selectedService.name} · ${formatPrice(selectedService.price)}` : undefined}
+                isOpen={openStep === 1}
+                isDone={Boolean(selectedService)}
+                onOpen={() => setOpenStep(1)}
+              >
+                {loadingServices && <p className="site-muted" role="status">Cargando servicios…</p>}
+                <div className="service-picker" role="group" aria-label="Servicios">
+                  {services.map((service) => {
+                    const active = selectedServiceIds.includes(service.id);
+
+                    return (
+                      <button
+                        className={active ? 'service-option is-selected' : 'service-option'}
+                        key={service.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleService(service.id)}
+                      >
+                        <span className="service-option-name">{service.name}</span>
+                        <span className="service-option-meta">
+                          {service.duration_minutes} min · {formatPrice(service.price)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </BookingStep>
+
+              <BookingStep
+                number={2}
+                title="Día y horario"
+                summary={selectedSlot ? `${formatLongDate(selectedSlot.startsAt)}, ${selectedSlot.time} con ${selectedSlot.staffName}` : undefined}
+                isOpen={openStep === 2}
+                isDisabled={selectedServiceIds.length === 0}
+                isDone={Boolean(selectedSlot)}
+                onOpen={() => {
+                  if (selectedServiceIds.length > 0) {
+                    setOpenStep(2);
+                  }
+                }}
+              >
+                <DateTimeSelector
+                  serviceIds={selectedServiceIds}
+                  selectedSlot={selectedSlot}
+                  onSelectSlot={selectSlot}
+                  refreshToken={availabilityRefreshToken}
+                />
+              </BookingStep>
+
+              <BookingStep
+                number={3}
+                title={confirmation ? 'Turno pedido' : 'Tus datos'}
+                isOpen={openStep === 3}
+                isDisabled={!selectedSlot && !confirmation}
+                isDone={Boolean(confirmation)}
+                onOpen={() => {
+                  if (selectedSlot || confirmation) {
+                    setOpenStep(3);
+                  }
+                }}
+              >
+                {confirmation ? (
+                  <div className="booking-confirmation" role="status">
+                    <p className="booking-confirmation-lead">
+                      Listo. Tu turno quedó pedido para el {formatAppointmentDateTime(confirmation.startsAt)} con{' '}
+                      {confirmation.staffName}.
+                    </p>
+
+                    <dl className="booking-facts">
+                      <div>
+                        <dt>Total</dt>
+                        <dd>{formatPrice(confirmation.totalPrice)}</dd>
+                      </div>
+                      {confirmation.depositRequired && (
+                        <div>
+                          <dt>Seña sugerida</dt>
+                          <dd>{formatPrice(confirmation.depositAmount)}</dd>
+                        </div>
+                      )}
+                    </dl>
+
+                    {confirmation.depositRequired ? (
+                      <div className="booking-transfer">
+                        <h4>Datos para transferir la seña</h4>
+                        <dl>
+                          <div>
+                            <dt>Titular</dt>
+                            <dd>{transferDetails.holder}</dd>
+                          </div>
+                          <div>
+                            <dt>Alias</dt>
+                            <dd>{transferDetails.alias}</dd>
+                          </div>
+                          <div>
+                            <dt>CBU/CVU</dt>
+                            <dd>{transferDetails.cbu}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                    ) : !appointmentRequestWhatsappUrl ? (
+                      <p className="site-muted">El local debe configurar su WhatsApp en el panel admin.</p>
+                    ) : null}
+
+                    <div className="booking-confirmation-actions">
+                      {proofWhatsappUrl && (
+                        <a className="site-button" href={proofWhatsappUrl} target="_blank" rel="noreferrer">
+                          <MessageCircle aria-hidden="true" />
+                          Enviar comprobante por WhatsApp
+                        </a>
+                      )}
+                      {appointmentRequestWhatsappUrl && (
+                        <a className="site-button" href={appointmentRequestWhatsappUrl} target="_blank" rel="noreferrer">
+                          <MessageCircle aria-hidden="true" />
+                          Avisar al local por WhatsApp
+                        </a>
+                      )}
+                      <button className="site-button site-button-ghost" type="button" onClick={startNewBooking}>
+                        Hacer otra reserva
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form className="booking-form" onSubmit={handleSubmit}>
+                    {selectedSlot && (
+                      <p className="booking-form-recap">
+                        {selectedService?.name} · {formatLongDate(selectedSlot.startsAt)}, {selectedSlot.time} con{' '}
+                        {selectedSlot.staffName}
+                      </p>
+                    )}
+
+                    <div className="booking-form-fields">
+                      <label>
+                        Nombre
+                        <input name="firstName" autoComplete="given-name" required minLength={2} maxLength={60} />
+                      </label>
+                      <label>
+                        Apellido
+                        <input name="lastName" autoComplete="family-name" required minLength={2} maxLength={60} />
+                      </label>
+                      <label className="booking-form-wide">
+                        Teléfono
+                        <input name="phone" type="tel" inputMode="tel" autoComplete="tel" required minLength={6} maxLength={25} />
+                      </label>
+                    </div>
+
+                    {error && <p className="site-error" role="alert">{error}</p>}
+
+                    <button className="site-button booking-submit" type="submit" disabled={submitting || !selectedSlot}>
+                      {submitting ? 'Reservando…' : 'Confirmar turno'}
+                    </button>
+                  </form>
+                )}
+              </BookingStep>
+            </div>
+          </div>
+        </section>
+
+        <Reveal>
+          <HoursSection schedule={schedule} />
+        </Reveal>
+      </main>
+
+      <SiteFooter todayLabel={todayLabel} />
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAvailability } from '../lib/api';
 import type { AvailabilitySlot } from '../types';
@@ -8,9 +8,6 @@ type DateTimeSelectorProps = {
   selectedSlot?: AvailabilitySlot;
   onSelectSlot: (slot: AvailabilitySlot | undefined) => void;
   refreshToken?: number;
-  isOpen?: boolean;
-  isDisabled?: boolean;
-  onToggle?: () => void;
 };
 
 const weekdayLabels = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
@@ -63,10 +60,7 @@ export function DateTimeSelector({
   serviceIds,
   selectedSlot,
   onSelectSlot,
-  refreshToken = 0,
-  isOpen = true,
-  isDisabled = false,
-  onToggle
+  refreshToken = 0
 }: DateTimeSelectorProps) {
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const todayISO = useMemo(() => toISODate(currentTime), [currentTime]);
@@ -149,128 +143,108 @@ export function DateTimeSelector({
   }
 
   return (
-    <section className={isOpen ? 'booking-panel accordion-panel open' : 'booking-panel accordion-panel'} aria-labelledby="booking-date-title">
-      <button
-        className="accordion-heading"
-        type="button"
-        disabled={isDisabled}
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span>
-          <p className="eyebrow">Paso 2</p>
-          <h2 id="booking-date-title">Elegí fecha y horario</h2>
-        </span>
-        <span className="accordion-icons">
-          <CalendarDays aria-hidden="true" />
-          <ChevronDown aria-hidden="true" />
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className="accordion-content">
-          <div className="calendar-box" aria-label="Calendario de turnos">
-            <div className="calendar-header">
-              <button
-                className="calendar-nav-button"
-                type="button"
-                onClick={() => moveMonth(-1)}
-                disabled={!canGoPrevious}
-                aria-label="Mes anterior"
-              >
-                <ChevronLeft aria-hidden="true" />
-              </button>
-              <strong>{formatMonthLabel(monthCursor)}</strong>
-              <button
-                className="calendar-nav-button"
-                type="button"
-                onClick={() => moveMonth(1)}
-                aria-label="Mes siguiente"
-              >
-                <ChevronRight aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="calendar-grid">
-              {weekdayLabels.map((label) => (
-                <span className="calendar-weekday" key={label}>{label}</span>
-              ))}
-
-              {calendarDays.map((day) => {
-                const isPast = day.iso < todayISO;
-                const isSelected = day.iso === selectedDate;
-                const className = [
-                  'calendar-day',
-                  day.inCurrentMonth ? '' : 'muted-month',
-                  isSelected ? 'active' : ''
-                ].filter(Boolean).join(' ');
-
-                return (
-                  <button
-                    className={className}
-                    key={day.iso}
-                    type="button"
-                    disabled={isPast}
-                    aria-pressed={isSelected}
-                    aria-label={formatSelectedDate(day.iso)}
-                    onClick={() => selectDate(day.date, day.iso)}
-                  >
-                    {day.day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <p className="selected-date-label">{formatSelectedDate(selectedDate)}</p>
-
-          <div className="slot-area">
-            {serviceIds.length === 0 && (
-              <p className="muted">Seleccioná al menos un servicio para ver horarios.</p>
-            )}
-
-            {loading && (
-              <div className="state-row" role="status">
-                <Loader2 className="spin" aria-hidden="true" />
-                Consultando agenda en tiempo real
-              </div>
-            )}
-
-            {error && <p className="error-text">{error}</p>}
-
-            {!loading && !error && serviceIds.length > 0 && visibleSlots.length === 0 && (
-              <p className="muted">No hay horarios libres para esta fecha.</p>
-            )}
-
-            {!loading && visibleSlots.length > 0 && (
-              <div className="slot-grid" aria-label="Horarios disponibles">
-                {visibleSlots.map((slot) => {
-                  const isSelected = selectedSlot?.startsAt === slot.startsAt
-                    && selectedSlot.staffId === slot.staffId;
-
-                  return (
-                    <button
-                      className={[
-                        'slot-button',
-                        isSelected ? 'active' : '',
-                        slot.isAvailable ? '' : 'disabled'
-                      ].filter(Boolean).join(' ')}
-                      key={`${slot.startsAt}-${slot.staffId}`}
-                      type="button"
-                      disabled={!slot.isAvailable}
-                      onClick={() => onSelectSlot(slot)}
-                    >
-                      <Clock aria-hidden="true" />
-                      <span>{slot.time}</span>
-                      <small>{slot.isAvailable ? slot.staffName : (slot.reason ?? 'Reservado')}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+    <div className="dt-picker">
+      <div className="dt-calendar" role="group" aria-label="Calendario de turnos">
+        <div className="dt-calendar-header">
+          <button
+            className="dt-icon-button"
+            type="button"
+            onClick={() => moveMonth(-1)}
+            disabled={!canGoPrevious}
+            aria-label="Mes anterior"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </button>
+          <strong>{formatMonthLabel(monthCursor)}</strong>
+          <button
+            className="dt-icon-button"
+            type="button"
+            onClick={() => moveMonth(1)}
+            aria-label="Mes siguiente"
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
         </div>
-      )}
-    </section>
+
+        <div className="dt-calendar-grid">
+          {weekdayLabels.map((label) => (
+            <span className="dt-weekday" key={label}>{label}</span>
+          ))}
+
+          {calendarDays.map((day) => {
+            const isPast = day.iso < todayISO;
+            const isSelected = day.iso === selectedDate;
+            const className = [
+              'dt-day',
+              day.inCurrentMonth ? '' : 'is-outside',
+              day.iso === todayISO ? 'is-today' : '',
+              isSelected ? 'is-selected' : ''
+            ].filter(Boolean).join(' ');
+
+            return (
+              <button
+                className={className}
+                key={day.iso}
+                type="button"
+                disabled={isPast}
+                aria-pressed={isSelected}
+                aria-label={formatSelectedDate(day.iso)}
+                onClick={() => selectDate(day.date, day.iso)}
+              >
+                {day.day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="dt-slots">
+        <p className="dt-date-label">{formatSelectedDate(selectedDate)}</p>
+
+        {serviceIds.length === 0 && (
+          <p className="site-muted">Elegí un servicio para ver los horarios.</p>
+        )}
+
+        {loading && (
+          <div className="dt-loading" role="status">
+            <Loader2 className="dt-spin" aria-hidden="true" />
+            Buscando horarios libres…
+          </div>
+        )}
+
+        {error && <p className="site-error">{error}</p>}
+
+        {!loading && !error && serviceIds.length > 0 && visibleSlots.length === 0 && (
+          <p className="site-muted">No hay horarios libres este día. Probá con otra fecha.</p>
+        )}
+
+        {!loading && visibleSlots.length > 0 && (
+          <div className="dt-slot-grid" role="group" aria-label="Horarios">
+            {visibleSlots.map((slot) => {
+              const isSelected = selectedSlot?.startsAt === slot.startsAt
+                && selectedSlot.staffId === slot.staffId;
+
+              return (
+                <button
+                  className={[
+                    'dt-slot',
+                    isSelected ? 'is-selected' : '',
+                    slot.isAvailable ? '' : 'is-taken'
+                  ].filter(Boolean).join(' ')}
+                  key={`${slot.startsAt}-${slot.staffId}`}
+                  type="button"
+                  disabled={!slot.isAvailable}
+                  aria-pressed={isSelected}
+                  onClick={() => onSelectSlot(slot)}
+                >
+                  <span className="dt-slot-time">{slot.time}</span>
+                  <small>{slot.isAvailable ? slot.staffName : (slot.reason ?? 'Reservado')}</small>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
