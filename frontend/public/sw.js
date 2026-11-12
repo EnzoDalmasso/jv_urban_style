@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jv-urban-style-v5';
+const CACHE_NAME = 'jv-urban-style-v6';
 const STATIC_ASSETS = [
   '/',
   '/admin',

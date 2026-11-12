@@ -1,3 +1,5 @@
+import { Wordmark } from '../Wordmark';
+
 type SiteFooterProps = {
   todayLabel: string | null;
 };
@@ -7,7 +9,7 @@ export function SiteFooter({ todayLabel }: SiteFooterProps) {
     <footer className="site-footer-bar">
       <div className="site-container site-footer-grid">
         <div className="site-footer-brand">
-          <span className="site-wordmark-mark" aria-hidden="true">JV</span>
+          <Wordmark showName={false} />
           <div>
             <strong>JV Urban Style Barbería</strong>
             {todayLabel && <span>{todayLabel}</span>}

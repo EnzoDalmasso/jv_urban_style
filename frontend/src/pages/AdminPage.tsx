@@ -14,7 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { BrandLogo } from '../components/BrandLogo';
+import { Wordmark } from '../components/Wordmark';
 import {
   createAdminFixedAppointment,
   createAdminService,
@@ -724,10 +724,12 @@ export function AdminPage() {
     return (
       <main className="admin-shell compact">
         <section className="admin-login">
-          <BrandLogo compact />
-          <ShieldCheck aria-hidden="true" />
-          <p className="eyebrow">Admin</p>
-          <h1>Panel del local</h1>
+          <Wordmark />
+          <ShieldCheck className="admin-login-icon" aria-hidden="true" />
+          <div>
+            <h1>Panel del local</h1>
+            <p className="muted">Ingresá el PIN para ver la agenda y administrar el local.</p>
+          </div>
           <form className="stack-form" onSubmit={handleLogin}>
             <label>
               PIN
@@ -750,12 +752,9 @@ export function AdminPage() {
   return (
     <main className="admin-shell">
       <header className="admin-header">
-        <div>
-          <p className="eyebrow">JV Urban Style</p>
-          <div className="admin-title-row">
-            <BrandLogo compact />
-            <h1>Panel de agenda</h1>
-          </div>
+        <div className="admin-title-row">
+          <Wordmark />
+          <h1>Panel de agenda</h1>
         </div>
         <div className="admin-header-actions">
           <button className="icon-text-button" type="button" onClick={enablePushNotifications} disabled={pushStatus === 'saving'}>

@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
   "orientation": "portrait-primary",
-  "background_color": "#070909",
-  "theme_color": "#d7b25d",
+  "background_color": "#17110d",
+  "theme_color": "#17110d",
   "categories": ["beauty", "business", "lifestyle"],
   "lang": "es-AR",
   "icons": [

@@ -1,6 +1,7 @@
 import { CalendarDays, Menu, X } from 'lucide-react';
 import { type MouseEvent, useEffect, useState } from 'react';
 import { scrollToSection } from '../../lib/scroll';
+import { Wordmark } from '../Wordmark';
 
 type SiteHeaderProps = {
   todayLabel: string | null;
@@ -53,12 +54,8 @@ export function SiteHeader({ todayLabel }: SiteHeaderProps) {
   return (
     <header className={['site-header', scrolled ? 'is-scrolled' : '', menuOpen ? 'is-menu-open' : ''].filter(Boolean).join(' ')}>
       <div className="site-header-inner">
-        <a className="site-wordmark" href="#inicio" onClick={(event) => goTo('inicio', event)}>
-          <span className="site-wordmark-mark" aria-hidden="true">JV</span>
-          <span className="site-wordmark-name">
-            Urban Style
-            <small>Barbería</small>
-          </span>
+        <a className="site-home-link" href="#inicio" aria-label="JV Urban Style Barbería, inicio" onClick={(event) => goTo('inicio', event)}>
+          <Wordmark />
         </a>
 
         <nav className="site-nav" aria-label="Secciones">

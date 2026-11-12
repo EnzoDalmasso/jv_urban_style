@@ -21,7 +21,7 @@ export function HoursSection({ schedule }: HoursSectionProps) {
 
         <div className="hours-card">
           {weeklyHours.length > 0 ? (
-            <dl className="hours-list">
+            <dl className="hours-week">
               {weeklyHours.map((hour) => (
                 <div
                   key={hour.day}

@@ -1,30 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Instrument+Sans:wght@400;500;600&display=swap');
-
 /*
-  Sitio publico de reservas. Todo vive bajo .site para no tocar el panel admin,
-  que comparte bundle y usa styles.css.
-
-  Paleta tomada del local: madera oscura, cuero, luz de laton y paredes claras.
+  Sitio publico de reservas. Todo vive bajo .site y sus clases propias para no
+  tocar el panel admin, que comparte bundle. Paleta y tipografias: :root en styles.css.
 */
 .site {
-  --espresso: #17110d;
-  --walnut: #1f1711;
-  --leather: #2a1f17;
-  --brass: #c9a15a;
-  --brass-bright: #e0bd78;
-  --brass-ink: #1b130c;
-  --bone: #efe6d6;
-  --smoke: #a89b88;
-  --error: #ec8b72;
-  --line: rgba(239, 230, 214, 0.12);
-  --line-strong: rgba(201, 161, 90, 0.45);
-
-  --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
-  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-
-  --header-height: 72px;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-
   min-height: 100vh;
   background: var(--espresso);
   color: var(--bone);
@@ -46,7 +24,6 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  letter-spacing: 0;
 }
 
 .site p {
@@ -59,11 +36,6 @@
 
 .site svg {
   flex: none;
-}
-
-.site :focus-visible {
-  outline: 2px solid var(--brass-bright);
-  outline-offset: 3px;
 }
 
 .site-container {
@@ -177,42 +149,9 @@ body.site-menu-open {
   gap: 32px;
 }
 
-.site-wordmark {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.site-home-link {
   margin-right: auto;
   text-decoration: none;
-}
-
-.site-wordmark-mark {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--brass);
-  border-radius: 50%;
-  color: var(--brass);
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.site-wordmark-name {
-  display: grid;
-  font-family: var(--font-display);
-  font-size: 1.375rem;
-  font-weight: 800;
-  line-height: 0.95;
-}
-
-.site-wordmark-name small {
-  color: var(--smoke);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.4;
 }
 
 .site-nav {
@@ -1135,12 +1074,12 @@ body.site-menu-open {
   }
 }
 
-.hours-list {
+.hours-week {
   margin: 0;
   border-top: 1.5px solid var(--espresso);
 }
 
-.hours-list div {
+.hours-week div {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -1148,23 +1087,23 @@ body.site-menu-open {
   border-bottom: 1px solid rgba(23, 17, 13, 0.14);
 }
 
-.hours-list dt {
+.hours-week dt {
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 600;
 }
 
-.hours-list dd {
+.hours-week dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
 }
 
-.hours-list .is-closed dd {
+.hours-week .is-closed dd {
   color: #8a7a66;
 }
 
-.hours-list .is-today {
+.hours-week .is-today {
   margin-inline: -12px;
   padding-inline: 12px;
   background: rgba(201, 161, 90, 0.22);
@@ -1268,7 +1207,7 @@ body.site-menu-open {
   line-height: 1.1;
 }
 
-.site-footer-brand span:not(.site-wordmark-mark) {
+.site-footer-brand > div > span {
   color: var(--smoke);
   font-size: 0.9375rem;
 }
@@ -1356,10 +1295,6 @@ body.site-menu-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   .site *,
   .site *::before,
   .site *::after {
