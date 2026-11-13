@@ -6,11 +6,19 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#17110d",
   "theme_color": "#17110d",
-  "categories": ["beauty", "business", "lifestyle"],
+  "categories": [
+    "beauty",
+    "business",
+    "lifestyle"
+  ],
   "lang": "es-AR",
   "icons": [
     {
@@ -24,18 +32,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/pwa-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ],
   "shortcuts": [

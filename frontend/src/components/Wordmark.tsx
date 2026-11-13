@@ -1,17 +1,13 @@
-type WordmarkProps = {
-  showName?: boolean;
-};
+import logoMark from '../assets/brand/logo-mark.webp';
 
-export function Wordmark({ showName = true }: WordmarkProps) {
+export function Wordmark() {
   return (
     <span className="wordmark">
-      <span className="wordmark-mark" aria-hidden="true">JV</span>
-      {showName && (
-        <span className="wordmark-name">
-          Urban Style
-          <small>Barbería</small>
-        </span>
-      )}
+      <img className="wordmark-mark" src={logoMark} alt="" width={186} height={160} />
+      <span className="wordmark-name">
+        Urban Style
+        <small>Barbería</small>
+      </span>
     </span>
   );
 }

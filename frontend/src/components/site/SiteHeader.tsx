@@ -9,6 +9,7 @@ type SiteHeaderProps = {
 
 const links = [
   { id: 'servicios', label: 'Servicios' },
+  { id: 'trabajos', label: 'Trabajos' },
   { id: 'reservar', label: 'Reservar' },
   { id: 'horarios', label: 'Horarios' }
 ];

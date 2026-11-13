@@ -14,6 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { BrandLogo } from '../components/BrandLogo';
 import { Wordmark } from '../components/Wordmark';
 import {
   createAdminFixedAppointment,
@@ -724,7 +725,7 @@ export function AdminPage() {
     return (
       <main className="admin-shell compact">
         <section className="admin-login">
-          <Wordmark />
+          <BrandLogo className="admin-login-logo" />
           <ShieldCheck className="admin-login-icon" aria-hidden="true" />
           <div>
             <h1>Panel del local</h1>

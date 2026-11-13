@@ -8,6 +8,7 @@ import { Reveal } from '../components/site/Reveal';
 import { ServicesBoard } from '../components/site/ServicesBoard';
 import { SiteFooter } from '../components/site/SiteFooter';
 import { SiteHeader } from '../components/site/SiteHeader';
+import { WorksGallery } from '../components/site/WorksGallery';
 import { createAppointment, fetchPublicSchedule, fetchServices } from '../lib/api';
 import { formatAppointmentDateTime, formatLongDate, formatPrice } from '../lib/format';
 import { describeToday } from '../lib/schedule';
@@ -183,6 +184,10 @@ export function BookingPage() {
 
         <Reveal>
           <ServicesBoard services={services} loading={loadingServices} onChoose={chooseService} />
+        </Reveal>
+
+        <Reveal>
+          <WorksGallery />
         </Reveal>
 
         <section className="site-section site-booking" id="reservar" aria-labelledby="reservar-title">

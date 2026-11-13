@@ -1,11 +1,10 @@
-const CACHE_NAME = 'jv-urban-style-v6';
+const CACHE_NAME = 'jv-urban-style-v7';
 const STATIC_ASSETS = [
   '/',
   '/admin',
   '/manifest.webmanifest',
   '/admin-manifest.webmanifest',
-  '/favicon.svg',
-  '/pwa-icon.svg',
+  '/favicon.png',
   '/pwa-icon-192.png'
 ];
 
@@ -39,6 +38,11 @@ self.addEventListener('fetch', (event) => {
 
   // Solo manejamos el propio sitio: la API, Google Fonts o el traductor de Chrome van directo por el navegador.
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Los videos se piden por rangos (respuestas 206), que la Cache API no admite.
+  if (request.destination === 'video' || request.headers.has('range')) {
     return;
   }
 

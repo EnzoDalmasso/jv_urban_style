@@ -524,6 +524,251 @@ body.site-menu-open {
   }
 }
 
+/* Trabajos: carrusel de fotos y videos de clientes */
+
+.site-works {
+  padding-bottom: clamp(72px, 10vw, 112px);
+  border-top: 1px solid var(--line);
+}
+
+.site-works-header {
+  max-width: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.site-works-header > div {
+  max-width: 560px;
+}
+
+.works-rail-controls {
+  display: none;
+  gap: 8px;
+}
+
+.works-arrow {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.works-arrow:hover {
+  border-color: var(--brass);
+  background: rgba(201, 161, 90, 0.1);
+}
+
+.works-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 880px) {
+  .works-rail-controls {
+    display: flex;
+  }
+}
+
+.works-rail {
+  --rail-gutter: max(20px, calc((100vw - 1180px) / 2));
+
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(68vw, 280px);
+  gap: 14px;
+  margin: 0;
+  padding: 0 var(--rail-gutter) 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--rail-gutter);
+  scrollbar-width: none;
+  list-style: none;
+}
+
+.works-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.works-rail li {
+  scroll-snap-align: start;
+}
+
+.works-tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--walnut);
+  cursor: zoom-in;
+  transition: border-color 220ms ease;
+}
+
+.works-tile img,
+.works-tile video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 50% 40%;
+  transition: transform 600ms var(--ease-out);
+}
+
+.works-tile:hover {
+  border-color: var(--line-strong);
+}
+
+.works-tile:hover img,
+.works-tile:hover video {
+  transform: scale(1.04);
+}
+
+.works-tile-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: rgba(23, 17, 13, 0.72);
+  backdrop-filter: blur(6px);
+  color: var(--bone);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.works-tile-badge svg {
+  width: 14px;
+  height: 14px;
+  color: var(--brass);
+  fill: currentColor;
+}
+
+/* Visor en grande */
+
+body:has(.works-viewer[open]) {
+  overflow: hidden;
+}
+
+.works-viewer {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bone);
+}
+
+.works-viewer::backdrop {
+  background: rgba(14, 10, 8, 0.94);
+}
+
+.works-viewer[open] {
+  display: grid;
+  place-items: center;
+}
+
+.works-viewer-frame {
+  display: grid;
+  place-items: center;
+}
+
+.works-viewer-frame img,
+.works-viewer-frame video {
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 520px);
+  max-height: min(84dvh, 924px);
+  border-radius: 14px;
+  background: var(--walnut);
+  object-fit: contain;
+}
+
+.works-viewer-close,
+.works-viewer-nav {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(23, 17, 13, 0.7);
+  color: var(--bone);
+  cursor: pointer;
+  transition: border-color 180ms ease;
+}
+
+.works-viewer-close:hover,
+.works-viewer-nav:hover {
+  border-color: var(--brass);
+}
+
+.works-viewer-close svg,
+.works-viewer-nav svg {
+  width: 22px;
+  height: 22px;
+}
+
+.works-viewer-close {
+  top: 16px;
+  right: 16px;
+}
+
+.works-viewer-nav {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.works-viewer-nav.is-prev {
+  left: 16px;
+}
+
+.works-viewer-nav.is-next {
+  right: 16px;
+}
+
+.works-viewer-count {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--smoke);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .works-viewer-nav {
+    top: auto;
+    bottom: 10px;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .works-viewer[open] .works-viewer-frame {
+    animation: site-fade-in 260ms ease-out both;
+  }
+}
+
 /* Reserva */
 
 .site-booking {
@@ -1191,23 +1436,16 @@ body.site-menu-open {
 }
 
 .site-footer-brand {
-  display: flex;
-  align-items: center;
+  display: grid;
+  justify-items: start;
   gap: 14px;
 }
 
-.site-footer-brand div {
-  display: grid;
+.site-footer-logo {
+  width: 180px;
 }
 
-.site-footer-brand strong {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.site-footer-brand > div > span {
+.site-footer-brand span {
   color: var(--smoke);
   font-size: 0.9375rem;
 }
