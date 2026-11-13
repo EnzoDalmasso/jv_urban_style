@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { type KeyboardEvent, type MouseEvent, useEffect, useRef, useState } from 'react';
-import { type GalleryItem, galleryItems } from '../../lib/gallery';
+import type { GalleryItem } from '../../lib/gallery';
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,7 +41,16 @@ function GalleryTile({ item, onOpen }: GalleryTileProps) {
           <img src={item.src} alt="" loading="lazy" decoding="async" width={720} height={960} />
         ) : (
           <>
-            <video ref={videoRef} src={item.src} poster={item.poster} muted loop playsInline preload="none" aria-hidden="true" />
+            <video
+              ref={videoRef}
+              src={item.poster ? item.src : `${item.src}#t=0.1`}
+              poster={item.poster ?? undefined}
+              muted
+              loop
+              playsInline
+              preload={item.poster ? 'none' : 'metadata'}
+              aria-hidden="true"
+            />
             <span className="works-tile-badge">
               <Play aria-hidden="true" />
               Video
@@ -53,11 +62,15 @@ function GalleryTile({ item, onOpen }: GalleryTileProps) {
   );
 }
 
-export function WorksGallery() {
+type WorksGalleryProps = {
+  items: GalleryItem[];
+};
+
+export function WorksGallery({ items }: WorksGalleryProps) {
   const railRef = useRef<HTMLUListElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const openItem = openIndex === null ? null : galleryItems[openIndex];
+  const openItem = openIndex === null ? null : items[openIndex];
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -78,7 +91,7 @@ export function WorksGallery() {
   function step(delta: 1 | -1) {
     setOpenIndex((current) => current === null
       ? current
-      : (current + delta + galleryItems.length) % galleryItems.length);
+      : (current + delta + items.length) % items.length);
   }
 
   function close() {
@@ -120,7 +133,7 @@ export function WorksGallery() {
       </div>
 
       <ul className="works-rail" ref={railRef}>
-        {galleryItems.map((item, index) => (
+        {items.map((item, index) => (
           <GalleryTile key={item.src} item={item} onOpen={() => setOpenIndex(index)} />
         ))}
       </ul>
@@ -138,7 +151,7 @@ export function WorksGallery() {
             {openItem.type === 'photo' ? (
               <img src={openItem.src} alt={openItem.alt} />
             ) : (
-              <video key={openItem.src} src={openItem.src} poster={openItem.poster} controls autoPlay playsInline aria-label={openItem.alt} />
+              <video key={openItem.src} src={openItem.src} poster={openItem.poster ?? undefined} controls autoPlay playsInline aria-label={openItem.alt} />
             )}
           </div>
         )}
@@ -153,7 +166,7 @@ export function WorksGallery() {
           <ChevronRight aria-hidden="true" />
         </button>
         {openIndex !== null && (
-          <p className="works-viewer-count">{openIndex + 1} de {galleryItems.length}</p>
+          <p className="works-viewer-count">{openIndex + 1} de {items.length}</p>
         )}
       </dialog>
     </section>

@@ -753,6 +753,187 @@ select option {
   color: var(--brass);
 }
 
+/* Galeria de trabajos (admin) */
+
+.gallery-manager-body {
+  display: grid;
+  gap: 16px;
+}
+
+.gallery-upload {
+  display: grid;
+  gap: 14px;
+}
+
+.gallery-dropzone {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 14px;
+  background: var(--espresso);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.gallery-dropzone:hover,
+.gallery-dropzone:focus-within {
+  border-color: var(--brass);
+  background: rgba(201, 161, 90, 0.06);
+}
+
+.gallery-dropzone svg {
+  width: 26px;
+  height: 26px;
+  color: var(--brass);
+}
+
+.gallery-dropzone small {
+  color: var(--smoke);
+}
+
+.gallery-dropzone input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.gallery-upload-fields {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+
+.gallery-upload-fields label {
+  display: grid;
+  gap: 6px;
+  color: var(--smoke);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.gallery-upload-fields .primary-cta {
+  width: 100%;
+}
+
+.gallery-spin {
+  width: 18px;
+  height: 18px;
+  animation: gallery-spin 900ms linear infinite;
+}
+
+@keyframes gallery-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gallery-empty {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--espresso);
+}
+
+.gallery-empty p {
+  margin: 0;
+}
+
+.gallery-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery-admin-card {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--espresso);
+}
+
+.gallery-admin-card.is-hidden .gallery-admin-thumb img,
+.gallery-admin-card.is-hidden .gallery-admin-thumb video {
+  opacity: 0.35;
+}
+
+.gallery-admin-thumb {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--walnut);
+}
+
+.gallery-admin-thumb img,
+.gallery-admin-thumb video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.gallery-admin-tag {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(23, 17, 13, 0.78);
+  color: var(--bone);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gallery-admin-alt {
+  display: grid;
+  gap: 4px;
+  color: var(--smoke);
+  font-size: 0.8125rem;
+}
+
+.gallery-admin-alt input {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+}
+
+.gallery-admin-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.gallery-admin-actions .icon-button {
+  min-width: 0;
+  min-height: 38px;
+}
+
+@media (min-width: 820px) {
+  .gallery-upload {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+    align-items: stretch;
+  }
+
+  .gallery-upload-fields {
+    align-content: end;
+  }
+}
+
 /* Login */
 
 .admin-shell.compact {

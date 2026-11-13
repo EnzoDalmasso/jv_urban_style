@@ -14,6 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { GalleryManager } from '../components/admin/GalleryManager';
 import { BrandLogo } from '../components/BrandLogo';
 import { Wordmark } from '../components/Wordmark';
 import {
@@ -1567,6 +1568,8 @@ export function AdminPage() {
               </>
             )}
           </section>
+
+          <GalleryManager pin={pin} />
         </div>
       )}
     </main>

@@ -9,8 +9,9 @@ import { ServicesBoard } from '../components/site/ServicesBoard';
 import { SiteFooter } from '../components/site/SiteFooter';
 import { SiteHeader } from '../components/site/SiteHeader';
 import { WorksGallery } from '../components/site/WorksGallery';
-import { createAppointment, fetchPublicSchedule, fetchServices } from '../lib/api';
+import { createAppointment, fetchGallery, fetchPublicSchedule, fetchServices } from '../lib/api';
 import { formatAppointmentDateTime, formatLongDate, formatPrice } from '../lib/format';
+import { bundledGallery, fromGalleryEntries, type GalleryItem } from '../lib/gallery';
 import { describeToday } from '../lib/schedule';
 import { scrollToSection } from '../lib/scroll';
 import type { AvailabilitySlot, CreateAppointmentResponse, PublicSchedule, Service } from '../types';
@@ -39,6 +40,7 @@ export function BookingPage() {
   const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
   const [schedule, setSchedule] = useState<PublicSchedule | null>(null);
   const [openStep, setOpenStep] = useState<BookingStepNumber>(1);
+  const [gallery, setGallery] = useState<GalleryItem[] | null>(null);
   const transferDetails = confirmation?.transfer ?? {
     holder: 'JV Urban Style Barbería',
     alias: 'JVURBANSTYLE',
@@ -66,6 +68,11 @@ export function BookingPage() {
     fetchPublicSchedule()
       .then(setSchedule)
       .catch(() => setSchedule(null));
+
+    // Sin galeria en Supabase (o si falla la API) se muestra la incluida en el build.
+    fetchGallery()
+      .then((response) => setGallery(response.configured ? fromGalleryEntries(response.items) : bundledGallery))
+      .catch(() => setGallery(bundledGallery));
   }, []);
 
   const todayLabel = schedule ? describeToday(schedule) : null;
@@ -186,9 +193,11 @@ export function BookingPage() {
           <ServicesBoard services={services} loading={loadingServices} onChoose={chooseService} />
         </Reveal>
 
-        <Reveal>
-          <WorksGallery />
-        </Reveal>
+        {gallery && gallery.length > 0 && (
+          <Reveal>
+            <WorksGallery items={gallery} />
+          </Reveal>
+        )}
 
         <section className="site-section site-booking" id="reservar" aria-labelledby="reservar-title">
           <div className="site-container site-booking-grid">

@@ -25,11 +25,14 @@ Los horarios se generan cada `SLOT_INTERVAL_MINUTES`, o cada tanto como dure la 
 
 - ver los turnos del día y las solicitudes futuras;
 - aceptar o rechazar solicitudes, marcar la seña como recibida y registrar si el cliente vino o no;
-- gestionar turnos fijos, servicios (precio y duración), profesionales, horario semanal y fechas especiales.
+- gestionar turnos fijos, servicios (precio y duración), profesionales, horario semanal y fechas especiales;
+- administrar la galería de trabajos: subir fotos y videos, editar descripciones, reordenar, ocultar y eliminar.
 
 Al aceptar, rechazar o confirmar la seña, el panel abre WhatsApp con un mensaje ya armado para el cliente.
 
 Quitar un servicio o un profesional no lo borra: lo desactiva, para no romper el historial.
+
+**Galería de trabajos.** La sección "Trabajos" muestra fotos y videos de clientes en un carrusel. Los archivos viven en un bucket público de Supabase Storage (`gallery`) y la tabla `gallery_items` guarda orden, descripción y visibilidad. Las subidas van directo del navegador a Storage con URLs firmadas que genera el backend, así los videos no pasan por el límite de tamaño de las funciones de Vercel. Antes de subir, el navegador achica las fotos a 1600 px en WebP y saca un fotograma de cada video como portada. Mientras la galería no esté configurada en Supabase, la web muestra las fotos y videos incluidos en `frontend/src/assets/gallery`.
 
 **PWA y notificaciones.** La reserva y el panel se pueden instalar como apps separadas, cada una con su manifest. Desde el panel se pueden activar notificaciones push (Web Push con claves VAPID), que avisan en el dispositivo cada vez que entra un turno nuevo.
 
@@ -176,6 +179,7 @@ Todas las rutas, excepto `/health`, están bajo `/api`. Las de `/api/admin` requ
 | `GET` | `/api/availability` | Horarios de un día. Parámetros: `date` (`YYYY-MM-DD`), `serviceIds` (ids separados por coma) o `serviceId`, y `staffId` opcional |
 | `POST` | `/api/appointments` | Crea un turno |
 | `POST` | `/api/appointments/:publicCode/cancel` | Cancela un turno con su código, si todavía está dentro del plazo |
+| `GET` | `/api/gallery` | Fotos y videos visibles de la galería. `configured: false` si Supabase no tiene la galería |
 
 El endpoint de cancelación existe en la API, pero el frontend todavía no tiene una pantalla que lo use.
 
@@ -218,6 +222,11 @@ Ejemplo de cuerpo para `POST /api/appointments`:
 | `GET` | `/api/admin/push-config` |
 | `POST` | `/api/admin/push-subscriptions` |
 | `POST` | `/api/admin/push-test` |
+| `GET` | `/api/admin/gallery` |
+| `POST` | `/api/admin/gallery/upload-url` |
+| `POST` | `/api/admin/gallery` |
+| `PUT` | `/api/admin/gallery/order` |
+| `PATCH` / `DELETE` | `/api/admin/gallery/:id` |
 
 `summary` devuelve en una sola respuesta todo lo que necesita el panel: configuración, servicios, profesionales, horarios, turnos fijos, turnos del día y solicitudes futuras.
 
@@ -260,7 +269,7 @@ Variables de producción:
 - **Backend:** las de la tabla de arriba, con `NODE_ENV=production`, `DEMO_MODE=false` y `CORS_ORIGIN` igual a la URL del frontend.
 - **Frontend:** `VITE_API_URL` con la URL del backend. Como se lee en el build, cualquier cambio requiere un redeploy.
 
-Si cambia la URL del backend, también hay que actualizar `connect-src` en la CSP de `frontend/vercel.json`.
+Si cambia la URL del backend, también hay que actualizar `connect-src` en la CSP de `frontend/vercel.json`. La CSP ya permite `https://*.supabase.co` para mostrar y subir los archivos de la galería.
 
 El plan gratuito de Supabase pausa los proyectos después de 7 días sin actividad. Hay dos mecanismos para evitarlo:
 

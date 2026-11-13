@@ -20,6 +20,14 @@ import {
   removeStaff,
   removeSpecialHours
 } from '../controllers/admin.controller.js';
+import {
+  getAdminGallery,
+  patchGalleryItem,
+  postGalleryItem,
+  postGalleryUploadUrl,
+  putGalleryOrder,
+  removeGalleryItem
+} from '../controllers/gallery.controller.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
@@ -51,3 +59,9 @@ adminRouter.patch('/fixed-appointments/:id', asyncHandler(patchFixedAppointment)
 adminRouter.delete('/fixed-appointments/:id', asyncHandler(removeFixedAppointment));
 adminRouter.patch('/appointments/:id/deposit', asyncHandler(patchAppointmentDeposit));
 adminRouter.patch('/appointments/:id/status', asyncHandler(patchAppointmentStatus));
+adminRouter.get('/gallery', asyncHandler(getAdminGallery));
+adminRouter.post('/gallery/upload-url', asyncHandler(postGalleryUploadUrl));
+adminRouter.post('/gallery', asyncHandler(postGalleryItem));
+adminRouter.put('/gallery/order', asyncHandler(putGalleryOrder));
+adminRouter.patch('/gallery/:id', asyncHandler(patchGalleryItem));
+adminRouter.delete('/gallery/:id', asyncHandler(removeGalleryItem));

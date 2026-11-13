@@ -136,3 +136,15 @@ export type CreateAppointmentResponse = {
     };
   };
 };
+
+export type GalleryMediaType = 'photo' | 'video';
+
+export type GalleryEntry = {
+  id: string;
+  mediaType: GalleryMediaType;
+  url: string;
+  posterUrl: string | null;
+  alt: string;
+  sortOrder: number;
+  isActive: boolean;
+};

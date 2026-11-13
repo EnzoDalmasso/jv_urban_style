@@ -2,6 +2,8 @@ import type {
   AdminSummary,
   AvailabilityResponse,
   CreateAppointmentResponse,
+  GalleryEntry,
+  GalleryMediaType,
   PublicSchedule,
   Service
 } from '../types';
@@ -257,6 +259,84 @@ export async function sendAdminPushTest(pin: string, subscription: PushSubscript
   return adminFetch<{ sent: number; failed: number; error?: string }>('/api/admin/push-test', pin, {
     method: 'POST',
     body: JSON.stringify(subscription)
+  });
+}
+
+export async function fetchGallery() {
+  const response = await fetch(`${API_URL}/api/gallery`);
+
+  if (!response.ok) {
+    throw new Error('No pudimos cargar la galería.');
+  }
+
+  return response.json() as Promise<{ configured: boolean; items: GalleryEntry[] }>;
+}
+
+export async function fetchAdminGallery(pin: string) {
+  return adminFetch<{ items: GalleryEntry[] }>('/api/admin/gallery', pin);
+}
+
+export async function requestGalleryUploadUrl(pin: string, payload: {
+  kind: 'photo' | 'poster' | 'video';
+  contentType: string;
+  size: number;
+}) {
+  return adminFetch<{ path: string; signedUrl: string }>('/api/admin/gallery/upload-url', pin, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+// Sube el archivo directo a Supabase Storage con la URL firmada del backend,
+// asi videos grandes no pasan por el limite de tamano de la funcion.
+export async function uploadToSignedUrl(signedUrl: string, file: Blob) {
+  const body = new FormData();
+  body.append('cacheControl', '31536000');
+  body.append('', file);
+
+  let response: Response;
+
+  try {
+    response = await fetch(signedUrl, { method: 'PUT', headers: { 'x-upsert': 'false' }, body });
+  } catch {
+    throw new Error('No pudimos subir el archivo. Revisá la conexión e intentá de nuevo.');
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? 'Supabase rechazó el archivo.');
+  }
+}
+
+export async function createAdminGalleryItem(pin: string, payload: {
+  mediaType: GalleryMediaType;
+  storagePath: string;
+  posterPath?: string | null;
+  alt: string;
+}) {
+  return adminFetch<{ item: GalleryEntry }>('/api/admin/gallery', pin, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateAdminGalleryItem(pin: string, id: string, payload: { alt?: string; isActive?: boolean }) {
+  return adminFetch<{ item: GalleryEntry }>(`/api/admin/gallery/${id}`, pin, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function reorderAdminGallery(pin: string, ids: string[]) {
+  return adminFetch<{ items: GalleryEntry[] }>('/api/admin/gallery/order', pin, {
+    method: 'PUT',
+    body: JSON.stringify({ ids })
+  });
+}
+
+export async function deleteAdminGalleryItem(pin: string, id: string) {
+  return adminFetch(`/api/admin/gallery/${id}`, pin, {
+    method: 'DELETE'
   });
 }
 
